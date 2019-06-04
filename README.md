@@ -5,7 +5,7 @@
 | Name | NEU ID | Email Address |
 | --- | --- | --- |
 | Anuja Thawali|001898170 |thawali.a@husky.neu.edu |
-| | | |
+| supriya patil|001449828 |patil.sup@husky.neu.edu |
 | | | |
 | | | |
 

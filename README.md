@@ -4,7 +4,7 @@
 
 | Name | NEU ID | Email Address |
 | --- | --- | --- |
-| | | |
+| Anuja Thawali|001898170 |thawali.a@husky.neu.edu |
 | | | |
 | | | |
 | | | |

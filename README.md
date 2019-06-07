@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Anuja Thawali|001898170 |thawali.a@husky.neu.edu |
 | supriya patil|001449828 |patil.sup@husky.neu.edu |
-| | | |
+| Adhria Deogade |001873261| deogade.a@husky.neu.edu|
 | | | |
 
 ## Technology Stack

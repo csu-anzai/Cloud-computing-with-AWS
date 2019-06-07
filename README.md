@@ -34,7 +34,7 @@ install HTTPBaiscAuth
 Run the project using command:
 ```python3 <filename.py>```
 
-Running on: [localhost]http://127.0.0.1:5000/
+Running on: http://127.0.0.1:5000/
 
 
 

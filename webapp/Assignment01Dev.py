@@ -212,6 +212,198 @@ def request_a_book(id):
         return jsonify("Unauthorized"), 401
 
 
+"""
+
+UPDATE A BOOK
+
+"""
+@app.route("/book", methods=["PUT"])
+def update_book():
+    try:
+        bookId = id
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+        # if not request.headers.get('id'):
+        #     return jsonify("Unauthorized"), 401
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+        dataDict = {}
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict["username"], dataDict["password"] = newData.split(":")
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password  
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+
+            """ OBTAIN BOOK ID TO CPMARE IN DATABASE """
+            bookId = request.json.get("id")
+            if (bookId == None):
+                return jsonify("Bad request"), 400
+
+            """ OBTAIN BOOK BY ID """
+            book = db.session.query(Books).filter_by(id=bookId).first()
+            if (book == None):
+                return jsonify("No content"), 204
+
+            book.id = bookId
+            book.title = request.json.get('title')
+            book.author = request.json.get('author')
+            book.isbn = request.json.get('isbn')
+            book.quantity = request.json.get('quantity')
+            db.session.commit()
+
+            """ DISPLAY BOOK DETAILS """
+            output = []
+            bookData = {}
+            bookData["id"] = book.id
+            bookData["title"] = book.title
+            bookData["author"] = book.author
+            bookData["isbn"] = book.isbn
+            bookData["quantity"] = book.quantity
+            output.append(bookData)
+            return jsonify(output), 200
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+        return jsonify("Unauthorized"), 401
+
+""" REGISTER BOOK """
+@app.route("/book", methods=["POST"])
+def register_book():
+    try:
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get("Authorization"):
+            return jsonify("Unauthorized"), 401
+        myHeader = request.headers["Authorization"]
+        if (myHeader == None):
+            return jsonify("Unauthorized"), 401
+
+        decoded_header = base64.b64decode(myHeader)
+        decoded_header_by_utf = decoded_header.decode('utf-8')
+
+        dataDict = {}
+        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+        if not user:
+            return jsonify("Unauthorized"), 401
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password
+
+        """ VERIFY USER """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+            if not request.json:
+                jsonify("Bad request"), 400
+            try:
+
+                """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
+                title = request.json.get('title')
+                if not title:
+                    return jsonify("Bad request"), 400
+                author = request.json.get('author')
+
+                if not author:
+                    return jsonify("Bad request"), 400
+
+                isbn = request.json.get('isbn')
+                if not isbn:
+                    return jsonify("Bad request"), 400
+
+                quantity = request.json.get('quantity')
+                if not quantity:
+                    return jsonify("Bad request"), 400
+
+                """ ADD BOOK IN DATABASE """
+                test = Books(title, author, isbn, quantity)
+                db.session.add(test)
+                db.session.commit()
+                """ DISPLAY BOOK DETAILS """
+                output = []
+                bookData = {}
+                bookData["id"] = test.id
+                bookData["title"] = test.title
+                bookData["author"] = test.author
+                bookData["isbn"] = test.isbn
+                bookData["quantity"] = test.quantity
+                output.append(bookData)
+                return jsonify(output), 201
+            except Exception as e:
+                return jsonify("Bad request"), 400
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+        return jsonify("Unauthorized"), 401
+
+
+
+"""
+
+GET ALL BOOKS
+
+"""
+@app.route("/book", methods=["GET"])
+def request_all_books():
+    try:
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+
+        """ OBTAIN HEADER """
+        myHeader = request.headers["Authorization"]
+        if (myHeader == None):
+            return jsonify("Unauthorized"), 401
+
+
+        decoded_header = base64.b64decode(myHeader)
+        decoded_header_by_utf = decoded_header.decode('utf-8')
+
+        dataDict = {}
+        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+        if not user:
+            return jsonify("Unauthorized"), 401
+
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password
+
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+            books = db.session.query(Books).all()
+
+            output = []
+            for book in books:
+                bookData = {}
+                bookData["id"] = book.id
+                bookData["title"] = book.title
+                bookData["author"] = book.author
+                bookData["isbn"] = book.isbn
+                bookData["quantity"] = book.quantity
+                output.append(bookData)
+            return jsonify(output), 200
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+        return jsonify(e), 500
+
+
+
+
 
 if __name__ == '__main__':
     

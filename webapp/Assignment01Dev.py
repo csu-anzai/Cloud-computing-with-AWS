@@ -37,6 +37,20 @@ class Person(db.Model):
         self.username = username
         self.password = password
 
+""" BOOKS TABLE """
+class Books(db.Model):
+    id = db.Column('id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True, unique=True)
+    title = db.Column(db.String(100))
+    author = db.Column(db.String(100))
+    isbn = db.Column(db.String(100))
+    quantity = db.Column(db.Integer)
+    
+    """ CONSTRUCTOR """
+    def __init__(self,title, author, isbn, quantity):
+        self.title = title
+        self.author = author
+        self.isbn = isbn
+        self.quantity = quantity
 
 
 """ ROUTE TO ROOT """
@@ -87,6 +101,116 @@ def retrieve_info():
             return jsonify(e), 500
     except:
         return jsonify("Bad request"), 400
+
+
+"""
+
+DELETE A BOOK
+
+"""
+@app.route("/book/<string:id>", methods=["DELETE"])
+def delete_book(id):
+    try:
+        bookId = id
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+        # if not request.headers.get('id'):
+        #     return jsonify("Unauthorized"), 401
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+        
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+        dataDict = {}
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict["username"], dataDict["password"] = newData.split(":")
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password  
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+
+            """ OBTAIN BOOK BY ID """
+            book = db.session.query(Books).filter_by(id=bookId).first()
+            if (book == None):
+                return jsonify("No content"), 204
+
+            """ DELETE BOOK FROM DATABASE """
+            db.session.delete(book)
+            db.session.commit()
+
+            return jsonify(''),204
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+        return jsonify("Unauthorized"), 401
+
+"""
+
+GET BOOK BY ID
+
+"""
+@app.route("/book/<string:id>", methods=["GET"])
+def request_a_book(id):
+    try:
+        bookId = id
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+        # if not request.headers.get('id'):
+        #     return jsonify("Unauthorized"), 401
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+
+        
+
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+        dataDict = {}
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict["username"], dataDict["password"] = newData.split(":")
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password  
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+
+            """ OBTAIN BOOK BY ID """
+            book = db.session.query(Books).filter_by(id=bookId).first()
+            if (book == None):
+                return jsonify("Not found"), 404
+            output = []
+            bookData = {}
+            bookData["id"] = book.id
+            bookData["title"] = book.title
+            bookData["author"] = book.author
+            bookData["isbn"] = book.isbn
+            bookData["quantity"] = book.quantity
+            output.append(bookData)
+            return jsonify(output), 200
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+        return jsonify("Unauthorized"), 401
+
 
 
 if __name__ == '__main__':

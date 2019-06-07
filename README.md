@@ -41,9 +41,12 @@ Running on: http://127.0.0.1:5000/
 ## Running Tests</br>
 ``` pytest <filename>.py```
 Opne Restlet and test the following
-1. POST request to register the user. Results in creating a user response 200 OK
-2. GET request validates the user and asks for basic auth credentials and generates a token .
-3. POST request to register the books 
+1. POST request to register the user. Results in creating a user response 200 OK (endpoint: "/user/register")
+2. GET request validates the user and asks for basic auth credentials and generates a token (endpoint: "/")
+3. POST request to register the books (endpoint: "/book")
+4. GET request to get all books (endpoint: "/book")
+5. PUT request to update one book (endpoint: "/book/{book_id}")
+6. DELETE request to delete one book (endpoint: "/book/{book_id}")
 
 
 

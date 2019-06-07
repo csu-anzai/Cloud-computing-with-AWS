@@ -10,12 +10,26 @@
 | | | |
 
 ## Technology Stack
-
+Developed using Flask a micro web framework written in Python
 
 ## Build Instructions
+Building requires:
+Python 3.6.7
+Sqlite
+Sqlalchemy
+Flask 1.0.3
+Werkzeug 0.15.4
+Restlet(chrome extension)
+
+
+Dependencies:
+install HTTPBaiscAuth
+
 
 
 ## Deploy Instructions
+Run the project using command python3 <filename.py>
+
 
 
 ## Running Tests

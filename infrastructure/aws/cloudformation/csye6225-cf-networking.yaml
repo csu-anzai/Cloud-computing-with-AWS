@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+ # Subnets:
+   # Type: 'AWS::EC2::Subnet::Id'
+    #Description: The list of SubnetIds in your Virtual Private Cloud (VPC)
+    #ConstraintDescription: >-
+     # must be a list of at least two existing subnets associated with at least
+      #two different availability zones. They should be residing in the selected
+      #Virtual Private Cloud.
+  Zone1:
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+    Description: List of zones in subnet
+ 
+
+
+  Zone2:
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+    Description: List of zones in subnet
+   
+  Zone3:
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+    Description: List of zones in subnet
+
+
+
+Resources:
+ 
+    #Type: "AWS::CloudFormation::Stack"
+     # Properties:
+      #DisableRollback: true
+
+
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      #Subnetid: !Ref Subnets
+      # Tags:
+       # - Key: foo
+        #  Value: bar
+   
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref Zone1
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.1/24
+      MapPublicIpOnLaunch: true
+
+
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref Zone2
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+
+
+  SubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref Zone3
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+  
+
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+
+
+  SubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetA
+
+
+  SubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetB
+
+
+  SubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetC
+
+
+
+
+
+
+

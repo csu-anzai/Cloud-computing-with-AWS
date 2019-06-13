@@ -57,6 +57,11 @@ gwid=$(aws ec2 create-internet-gateway --query 'InternetGateway.{InternetGateway
 #echo "created gateways "$gwid"" 
 
 
+
+echo "adding tag to Gateway"
+aws ec2 create-tags --resources "$gwid" --tags "Key=Name,Value=Internet_gateway" --region "$VPCRegion"
+
+
 echo "$gwid"
 echo "attaching gateways to VPC"
 aws ec2 attach-internet-gateway --vpc-id "$vpcid" --internet-gateway-id "$gwid"
@@ -68,6 +73,11 @@ echo "creating route table"
 
 ROUTE_TABLE_ID_1=$(aws ec2 create-route-table --vpc-id "$vpcid" --query 'RouteTable.{RouteTableId:RouteTableId}' --output text| cut -f7)
 echo "  Route Table ID '$ROUTE_TABLE_ID_1' CREATED."
+
+
+echo "adding tags to Route table"
+
+aws ec2 create-tags --resources "$ROUTE_TABLE_ID_1" --tags "Key=Name,Value=Routing_table" --region "$VPCRegion"
 
 echo "creating route to internet "
 

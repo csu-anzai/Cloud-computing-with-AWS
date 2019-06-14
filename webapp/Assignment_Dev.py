@@ -714,6 +714,61 @@ def delete_image(id, imgId):
         return jsonify("Unauthorized"), 401
 
 
+"""
+GET BOOK IMAGE
+"""
+@app.route("/book/<string:id>/image/<string:imgId>", methods=["GET"])
+def get_book_image(id, imgId):
+    try:
+        print("in get book image")
+        bookId = id
+        imageId = imgId
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+        # if not request.headers.get('id'):
+        #     return jsonify("Unauthorized"), 401
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+        
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+        dataDict = {}
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict["username"], dataDict["password"] = newData.split(":")
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password  
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+
+            """ OBTAIN BOOK BY ID """
+            image = db.session.query(Image).filter_by(id=imageId).filter_by(book_id=bookId).first()
+
+            output = []
+            image_data = {}
+            image_data["id"] = image.id
+            image_data["url"] = image.url
+            
+            output.append(image_data)
+                        
+            return jsonify(output),200
+
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+
+        print("in exception")
+        return jsonify("Unauthorized"), 401
 
 
 

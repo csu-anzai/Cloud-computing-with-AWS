@@ -10,6 +10,17 @@ import uuid
 import os
 from werkzeug.utils import secure_filename
 import json
+from password_strength import PasswordPolicy
+from password_strength import PasswordStats
+
+policy = PasswordPolicy.from_names(
+    length=8,
+    uppercase=0,  # need min. 2 uppercase letters
+    numbers=0,  # need min. 2 digits
+    special=0,  # need min. 2 special characters
+    nonletters=0,  # need min. 2 non-letter characters (digits, specials, anything)
+    strength=0.3  # need a password that scores at least 0.5 with its strength
+)
 
 """ Set salt encoding beginning code"""
 salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
@@ -126,9 +137,7 @@ def retrieve_info():
 
 
 """
-
 DELETE A BOOK
-
 """
 @app.route("/book/<string:id>", methods=["DELETE"])
 def delete_book(id):
@@ -177,9 +186,7 @@ def delete_book(id):
         return jsonify("Unauthorized"), 401
 
 """
-
 GET BOOK BY ID
-
 """
 @app.route("/book/<string:id>", methods=["GET"])
 def request_a_book(id):
@@ -241,9 +248,7 @@ def request_a_book(id):
 
 
 """
-
 UPDATE A BOOK
-
 """
 @app.route("/book", methods=["PUT"])
 def update_book():
@@ -390,9 +395,7 @@ def register_book():
 
 
 """
-
 GET ALL BOOKS
-
 """
 @app.route("/book", methods=["GET"])
 def request_all_books():

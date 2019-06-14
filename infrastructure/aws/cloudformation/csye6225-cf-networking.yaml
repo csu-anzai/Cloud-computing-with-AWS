@@ -1,12 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
- # Subnets:
-   # Type: 'AWS::EC2::Subnet::Id'
-    #Description: The list of SubnetIds in your Virtual Private Cloud (VPC)
-    #ConstraintDescription: >-
-     # must be a list of at least two existing subnets associated with at least
-      #two different availability zones. They should be residing in the selected
-      #Virtual Private Cloud.
   Zone1:
     Type: 'AWS::EC2::AvailabilityZone::Name'
     Description: List of zones in subnet
@@ -25,20 +18,10 @@ Parameters:
 
 Resources:
  
-    #Type: "AWS::CloudFormation::Stack"
-     # Properties:
-      #DisableRollback: true
-
-
-
   VPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
-      #Subnetid: !Ref Subnets
-      # Tags:
-       # - Key: foo
-        #  Value: bar
    
   InternetGateway:
     Type: AWS::EC2::InternetGateway

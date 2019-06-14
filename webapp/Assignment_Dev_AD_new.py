@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 import json
 from password_strength import PasswordPolicy
 from password_strength import PasswordStats
+import re
 
 policy = PasswordPolicy.from_names(
     length=8,
@@ -19,7 +20,7 @@ policy = PasswordPolicy.from_names(
     numbers=0,  # need min. 0 digits
     special=0,  # need min. 0 special characters
     nonletters=0,  # need min. 0 non-letter characters (digits, specials, anything)
-    strength=0.3  # need a password that scores at least 0.3 with its strength
+    strength=0.1  # need a password that scores at least 0.3 with its strength
 )
 
 """ Set salt encoding beginning code"""
@@ -114,6 +115,11 @@ def retrieve_info():
             email = request.json.get('username')
             if not email:
                 return jsonify("Bad request"), 400
+
+            """ VERIFY EMAIL """
+            is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
+            if not is_valid:
+                return jsonify("Bad email request"), 400
             
 
             """ VERIFY PASSWORD """
@@ -227,11 +233,16 @@ def request_a_book(id):
         """ VERIFY TOKEN """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
 
+            print(bookId)
+
             """ OBTAIN BOOK BY ID """
             book = db.session.query(Books).filter_by(id=bookId).first()
+
             if (book == None):
                 return jsonify("Not found"), 404
-            image = db.session.query(Image).filter_by(id=bookId).first()
+            image = db.session.query(Image).filter_by(book_id=bookId).first()
+            print("image : ", image.id)
+
             bookData = {}
             bookData["id"] = book.id
             bookData["title"] = book.title
@@ -241,17 +252,23 @@ def request_a_book(id):
             bookData['Image'] = ''
             json1 = json.dumps(bookData, indent=4)
 
+            print("before  image")
             image_array = {}
             image_array['id'] = image.id
             image_array['url'] = image.url
+            print("after populate image array")
 
             json2 = json.dumps(image_array, indent=4)
             resUm = json.loads(json1)
+            print("loadd bookr array for image")
             resUm['Image'] = json.loads(json2)
-
+            print("after loading book array with image")
             return json.dumps(resUm, indent=4), 200
+
+        print("intry  exception")
         return jsonify("Unauthorized"), 401
     except Exception as e:
+        print("in exception")
         return jsonify("Unauthorized"), 401
 
 
@@ -294,37 +311,51 @@ def update_book():
 
             """ OBTAIN BOOK BY ID """
             book = db.session.query(Books).filter_by(id=bookId).first()
+            print("book", book)
             if (book == None):
                 return jsonify("No content"), 204
             image = db.session.query(Image).filter_by(id=bookId).first()
+            print("img", image)
             book.id = bookId
+            print(book.id)
             book_data = request.get_json()
+            print(book_data)
             image_data = book_data['image']
             book.title = book_data['title']
+            print("Bok title", book.title)
             book.author = book_data['author']
             book.isbn = book_data['isbn']
             book.quantity = book_data['quantity']
+            print("QUANT", book.quantity)
+            print("IMG DATA", image_data)
             image.id = image_data['id']
+            print("image id", image.id)
             image.url = image_data['url']
-            image.book_id = image_data['book_id']
+            print("image url", image.url)
+            # image.book_id = image_data['book_id']
             db.session.commit()
+            print("Committed")
 
             """ DISPLAY BOOK DETAILS """
             # output = []
             bookData = {}
+            print(bookData)
             bookData["id"] = book.id
+            print(bookData["id"])
             bookData["title"] = book.title
             bookData["author"] = book.author
             bookData["isbn"] = book.isbn
             bookData["quantity"] = book.quantity
             bookData['Image'] = ''
             json1 = json.dumps(bookData, indent=4)
+            print(json1)
 
             image_array = {}
-            image_array['book_id'] = image.book_id
+            image_array['id'] = image.id
             image_array['url'] = image.url
 
             json2 = json.dumps(image_array, indent=4)
+
             print(json2)
             resUm = json.loads(json1)
             print (resUm)
@@ -370,8 +401,11 @@ def register_book():
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
                 #book.id = bookId
                 book_data = request.get_json()
+                print(book_data)
                 image_data = book_data['image']
+                print(image_data)
                 title = book_data['title']
+                print(title)
                 author = book_data['author']
                 isbn = book_data['isbn']
                 quantity = book_data['quantity']
@@ -382,16 +416,36 @@ def register_book():
 
                 """ ADD BOOK IN DATABASE """
                 test = Books(title, author, isbn, quantity)
+                print(test)
+                print(url)
+                print(book_id)
+
+                if not url:
+                    print("Inside")
+                    if not book_id:
+                        print("Beifre dcommitting")
+                        db.session.add(test)
+                        print("test added")
+                        db.session.commit()
+                        print("Committed")
+                        return jsonify("Posted"), 200
+
+                # is not None and book_id is not None:
                 img_set = Image(url, book_id)
-                db.session.add(test)
-                db.session.commit()
                 db.session.add(img_set)
                 db.session.commit()
+                # db.session.add(test)
+                # db.session.commit()
+
+                
+                
 
                 """ DISPLAY BOOK DETAILS """
                 # output = []
                 bookData = {}
+                print(bookData)
                 bookData["id"] = test.id
+                bookData["id"]
                 bookData["title"] = test.title
                 bookData["author"] = test.author
                 bookData["isbn"] = test.isbn
@@ -401,6 +455,7 @@ def register_book():
 
                 image_array = {}
                 image_array['book_id'] = img_set.book_id
+                print("Image data for json", image_array)
                 image_array['url'] = img_set.url
 
                 json2 = json.dumps(image_array, indent=4)
@@ -453,28 +508,72 @@ def request_all_books():
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
             books = db.session.query(Books).all()
             img_es = db.session.query(Image).all()
+            print("****",img_es)
+            print("My book:", books)
 
             output = []
             for book in books:
-                bookData = {}
-                bookData["id"] = book.id
-                bookData["title"] = book.title
-                bookData["author"] = book.author
-                bookData["isbn"] = book.isbn
-                bookData["quantity"] = book.quantity
-                bookData['Image'] = ''
-                json1 = json.dumps(bookData, indent=4)
+                if not img_es:
+                    bookData = {}
+                    bookData["id"] = book.id
+                    bookData["title"] = book.title
+                    bookData["author"] = book.author
+                    bookData["isbn"] = book.isbn
+                    bookData["quantity"] = book.quantity
+                    bookData['Image'] = ''
+                    json1 = json.dumps(bookData, indent=4)
+                    image_array = {}
+                    image_array["id"] = ''
+                    image_array["url"] = ''
+                    json2 = json.dumps(image_array, indent=4)
+                    resUm = json.loads(json1)
+                    resUm['Image'] = json.loads(json2)
+                    jsonFile = json.dumps(resUm)
+                    output.append(jsonFile)
+            
+                else:
 
-                image_array = {}
-                image_array['id'] = img_es.id
-                image_array['url'] = img_es.url
+                    for img in img_es:
 
-                json2 = json.dumps(image_array, indent=4)
-                print(json2)
-                resUm = json.loads(json1)
-                print (resUm)
-                resUm['Image'] = json.loads(json2)
-                return json.dumps(resUm, indent=4), 200
+                        bookData = {}
+                        bookData["id"] = book.id
+                        bookData["title"] = book.title
+                        bookData["author"] = book.author
+                        bookData["isbn"] = book.isbn
+                        bookData["quantity"] = book.quantity
+                        bookData['Image'] = ''
+                        json1 = json.dumps(bookData, indent=4)
+
+# return jsonify(output), 200
+                        # if img_es.id:
+                        if img.book_id==book.id:
+                            image_array = {}
+                            print("img_es.id ",img.id)
+                            image_array["id"] = img.id
+                            image_array["url"] = img.url
+                            image_array["book_id"] = img.book_id
+                            json2 = json.dumps(image_array, indent=4)
+                            print(json2)
+                            resUm = json.loads(json1)
+                            print (resUm)
+                            resUm['Image'] = json.loads(json2)
+                            jsonFile = json.dumps(resUm)
+                            output.append(jsonFile)
+                            # return json.dumps(resUm, indent=4), 200
+                        else:
+                            image_array = {}
+                            image_array["id"] = ''
+                            image_array["url"] = ''
+                            json2 = json.dumps(image_array, indent=4)
+                            resUm = json.loads(json1)
+                            resUm['Image'] = json.loads(json2)
+                            jsonFile = json.dumps(resUm)
+                            output.append(jsonFile)
+            return jsonify(output), 200
+
+
+
+                # return jsonify(), 201
         return jsonify("Unauthorized"), 401
     except Exception as e:
         return jsonify(e), 500
@@ -592,8 +691,8 @@ def upload_image(id):
 
 
 """ UPDATE BOOK IMAGE """
-@app.route("/book/<string:idBook>/image/<string:imgId>", methods=["PUT"])
-def upload_image(id, imgId):
+@app.route("/book/<string:id>/image/<string:imgId>", methods=["PUT"])
+def update_image(id, imgId):
     bookId = id
     imageId = imgId
 
@@ -664,19 +763,10 @@ def upload_image(id, imgId):
                     
                     print(image)
                     print(image.id)
-                
 
-                
+                return jsonify('No Content'),204
 
-
-            return jsonify('No Content'),204
-        
-
-
-        
-                    
-
-                    return json.dumps(resUm, indent=4), 201
+            return json.dumps(resUm, indent=4), 201
         except Exception as e:
             return jsonify(e), 500
 

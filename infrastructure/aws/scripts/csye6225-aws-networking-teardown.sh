@@ -13,7 +13,7 @@ echo "$vpcid"
 
 
 
-vpcid=$(aws ec2 describe-vpcs --filter Name=tag-value,Values=”Cloud2019VPC” | grep -i VpcId | grep , |  sed -E 's/^.*(vpc-[a-z0-9]+).*$/\1/');
+#vpcid=$(aws ec2 describe-vpcs --filter Name=tag-value,Values=”Cloud2019VPC” | grep -i VpcId | grep , |  sed -E 's/^.*(vpc-[a-z0-9]+).*$/\1/');
 echo "$vpcid"
 if [[ -z "$vpcid" ]]; then
   echo "--- VPC doesnt exisit ---"

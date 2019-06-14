@@ -349,11 +349,12 @@ def register_book():
         """ VERIFY USER """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
             if not request.json:
+                print("if not json")
                 jsonify("Bad request"), 400
             try:
 
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
-                book.id = bookId
+                #book.id = bookId
                 book_data = request.get_json()
                 image_data = book_data['image']
                 title = book_data['title']
@@ -363,10 +364,10 @@ def register_book():
                 book_id = image_data['id']
                 url = image_data['url']
 
-                image_id = 
+                #image_id = 
 
                 """ ADD BOOK IN DATABASE """
-                test = Books(title, author, isbn, quantity, image_id)
+                test = Books(title, author, isbn, quantity)
                 db.session.add(test)
                 db.session.commit()
                 """ DISPLAY BOOK DETAILS """
@@ -380,6 +381,7 @@ def register_book():
                 output.append(bookData)
                 return jsonify(output), 201
             except Exception as e:
+                print("in exception")
                 return jsonify("Bad request"), 400
         return jsonify("Unauthorized"), 401
     except Exception as e:
@@ -483,7 +485,7 @@ def upload_image(id):
                 print (file.filename)
 
                 if file.filename == '':
-                    flash('No selected file')
+                    print('No selected file')
 
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
@@ -514,7 +516,9 @@ def upload_image(id):
                     image = db.session.query(Image).filter_by(book_id=bookId).first()
                     print(image)
                     print(image.id)
-                    db.session.commit()
+                    #db.session.commit()
+
+                    print("image id: ", image.id)
 
                     """ DISPLAY BOOK DETAILS """
                     bookData = {}
@@ -528,7 +532,8 @@ def upload_image(id):
                     json1 = json.dumps(bookData, indent=4)
 
                     image_array = {}
-                    image_array['book_id'] = image.book_id
+                    image_array['id'] = image.id
+                    #image_array['book_id'] = image.book_id
                     image_array['url'] = image.url
 
                     json2 = json.dumps(image_array, indent=4)
@@ -547,106 +552,224 @@ def upload_image(id):
 
 
 
-""" UPDATE BOOK IMAGE """
-@app.route("/book/<string:idBook>/image/<string:idImage>", methods=["PUT"])
-def upload_image(id):
+# """ UPDATE BOOK IMAGE """
+# @app.route("/book/<string:idBook>/image/<string:idImage>", methods=["PUT"])
+# def upload_image(id):
 
-    """ AUTHENTICATE BY TOKEN """
-    if not request.headers.get("Authorization"):
-        return jsonify("Unauthorized"), 401
-    myHeader = request.headers["Authorization"]
-    if (myHeader == None):
-        return jsonify("Unauthorized"), 401
+#     """ AUTHENTICATE BY TOKEN """
+#     if not request.headers.get("Authorization"):
+#         return jsonify("Unauthorized"), 401
+#     myHeader = request.headers["Authorization"]
+#     if (myHeader == None):
+#         return jsonify("Unauthorized"), 401
 
-    decoded_header = base64.b64decode(myHeader)
-    decoded_header_by_utf = decoded_header.decode('utf-8')
+#     decoded_header = base64.b64decode(myHeader)
+#     decoded_header_by_utf = decoded_header.decode('utf-8')
 
-    dataDict = {}
-    dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+#     dataDict = {}
+#     dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
 
-    """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-    user = Person.query.filter_by(username=dataDict["username"]).first()
-    if not user:
-        return jsonify("Unauthorized"), 401
-    userData = {}
-    userData["username"] = user.username
-    userData["password"] = user.password
+#     """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+#     user = Person.query.filter_by(username=dataDict["username"]).first()
+#     if not user:
+#         return jsonify("Unauthorized"), 401
+#     userData = {}
+#     userData["username"] = user.username
+#     userData["password"] = user.password
 
-    """ VERIFY USER """
-    if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
-        if not request.json:
-            jsonify("Bad request"), 400
-        try:
+#     """ VERIFY USER """
+#     if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+#         if not request.json:
+#             jsonify("Bad request"), 400
+#         try:
 
-            print ("in upload_image")
-            if 'file' in request.files:
-                print("file present")
+#             print ("in upload_image")
+#             if 'file' in request.files:
+#                 print("file present")
 
-                file = request.files['file']
-                print (file.filename)
+#                 file = request.files['file']
+#                 print (file.filename)
 
-                if file.filename == '':
-                    flash('No selected file')
+#                 if file.filename == '':
+#                     flash('No selected file')
 
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
+#                 if file and allowed_file(file.filename):
+#                     filename = secure_filename(file.filename)
 
-                    print("filename: ",filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#                     print("filename: ",filename)
+#                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+#                     url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-                    print("url: ", url_for_image)
+#                     print("url: ", url_for_image)
 
-                    """ OBTAIN BOOK ID TO CPMARE IN DATABASE """
-                    bookId = id
-                    if (bookId == None):
-                        return jsonify("Bad request"), 400
+#                     """ OBTAIN BOOK ID TO CPMARE IN DATABASE """
+#                     bookId = id
+#                     if (bookId == None):
+#                         return jsonify("Bad request"), 400
 
-                    """ OBTAIN BOOK BY ID """
-                    book = db.session.query(Books).filter_by(id=bookId).first()
-                    if (book == None):
-                        return jsonify("No content"), 204
+#                     """ OBTAIN BOOK BY ID """
+#                     book = db.session.query(Books).filter_by(id=bookId).first()
+#                     if (book == None):
+#                         return jsonify("No content"), 204
 
 
-                    """ ADD IMAGE in table IMAGE"""
-                    img = Image(url_for_image, bookId)
-                    db.session.add(img)
-                    db.session.commit()
+#                     """ ADD IMAGE in table IMAGE"""
+#                     img = Image(url_for_image, bookId)
+#                     db.session.add(img)
+#                     db.session.commit()
 
-                    """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""
-                    image = db.session.query(Image).filter_by(book_id=bookId).first()
-                    print(image)
-                    print(image.id)
-                    db.session.commit()
+#                     """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""
+#                     image = db.session.query(Image).filter_by(book_id=bookId).first()
+#                     print(image)
+#                     print(image.id)
+#                     db.session.commit()
 
-                    """ DISPLAY BOOK DETAILS """
-                    bookData = {}
-                    bookData["id"] = book.id
-                    bookData["title"] = book.title
-                    bookData["author"] = book.author
-                    bookData["isbn"] = book.isbn
-                    bookData["quantity"] = book.quantity
-                    bookData['Image'] = ''
-                    # output.append(bookData)
-                    json1 = json.dumps(bookData, indent=4)
+#                     """ DISPLAY BOOK DETAILS """
+#                     bookData = {}
+#                     bookData["id"] = book.id
+#                     bookData["title"] = book.title
+#                     bookData["author"] = book.author
+#                     bookData["isbn"] = book.isbn
+#                     bookData["quantity"] = book.quantity
+#                     bookData['Image'] = ''
+#                     # output.append(bookData)
+#                     json1 = json.dumps(bookData, indent=4)
 
-                    image_array = {}
-                    image_array['book_id'] = image.book_id
-                    image_array['url'] = image.url
+#                     image_array = {}
+#                     image_array['book_id'] = image.book_id
+#                     image_array['url'] = image.url
 
-                    json2 = json.dumps(image_array, indent=4)
-                    print(json2)
+#                     json2 = json.dumps(image_array, indent=4)
+#                     print(json2)
 
                    
-                    resUm = json.loads(json1)
-                    print (resUm)
-                    resUm['Image'] = json.loads(json2)
-                    #print (json.dumps(res)   
+#                     resUm = json.loads(json1)
+#                     print (resUm)
+#                     resUm['Image'] = json.loads(json2)
+#                     #print (json.dumps(res)   
                     
 
-                    return json.dumps(resUm, indent=4), 201
-        except Exception as e:
-            return jsonify(e), 500
+#                     return json.dumps(resUm, indent=4), 201
+#         except Exception as e:
+#             return jsonify(e), 500
+
+
+"""
+DELETE A BOOK
+"""
+@app.route("/book/<string:id>/image/<string:imgId>", methods=["DELETE"])
+def delete_image(id, imgId):
+    try:
+        bookId = id
+        imageId = imgId
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+        # if not request.headers.get('id'):
+        #     return jsonify("Unauthorized"), 401
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+        
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+        dataDict = {}
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict["username"], dataDict["password"] = newData.split(":")
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password  
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+
+            """ OBTAIN BOOK BY ID """
+            book = db.session.query(Books).filter_by(id=bookId).first()
+            image = db.session.query(Image).filter_by(id=imgId).first()
+
+            if (image == None):
+                return jsonify("No content"), 204
+
+            # if (book == None):
+            #     return jsonify("No content"), 204
+
+            if image.book_id == bookId:
+                
+                """ DELETE BOOK FROM DATABASE """
+                db.session.delete(image)
+                db.session.commit()
+
+
+            return jsonify('No Content'),204
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+        return jsonify("Unauthorized"), 401
+
+
+"""
+GET BOOK IMAGE
+"""
+@app.route("/book/<string:id>/image/<string:imgId>", methods=["GET"])
+def get_book_image(id, imgId):
+    try:
+        print("in get book image")
+        bookId = id
+        imageId = imgId
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+        # if not request.headers.get('id'):
+        #     return jsonify("Unauthorized"), 401
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+        
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+        dataDict = {}
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict["username"], dataDict["password"] = newData.split(":")
+        user = Person.query.filter_by(username=dataDict["username"]).first()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+        userData = {}
+        userData["username"] = user.username
+        userData["password"] = user.password  
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+
+            """ OBTAIN BOOK BY ID """
+            image = db.session.query(Image).filter_by(id=imageId).filter_by(book_id=bookId).first()
+
+            output = []
+            image_data = {}
+            image_data["id"] = image.id
+            image_data["url"] = image.url
+            
+            output.append(image_data)
+                        
+            return jsonify(output),200
+
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+
+        print("in exception")
+        return jsonify("Unauthorized"), 401
+
 
 
 

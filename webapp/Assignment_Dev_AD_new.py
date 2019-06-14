@@ -328,10 +328,16 @@ def update_book():
             book.quantity = book_data['quantity']
             print("QUANT", book.quantity)
             print("IMG DATA", image_data)
-            image.id = image_data['id']
-            print("image id", image.id)
-            image.url = image_data['url']
-            print("image url", image.url)
+            print("ID", image_data['id'])
+            if image_data['id']:
+                image.id = image_data['id']
+            if image_data['url']:
+                image.url = image_data['url']
+
+            
+            # print("image id", image.id)
+            
+            # print("image url", image.url)
             # image.book_id = image_data['book_id']
             db.session.commit()
             print("Committed")
@@ -351,6 +357,19 @@ def update_book():
             print(json1)
 
             image_array = {}
+            # print("IMAGE ID", image)
+            if not image:
+                image_array['id'] = ''
+                image_array['url'] = ''
+
+                json2 = json.dumps(image_array, indent=4)
+
+                print(json2)
+                resUm = json.loads(json1)
+                print (resUm)
+                resUm['Image'] = json.loads(json2)
+                return json.dumps(resUm, indent=4), 200
+
             image_array['id'] = image.id
             image_array['url'] = image.url
 

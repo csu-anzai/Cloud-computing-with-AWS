@@ -80,14 +80,14 @@ Resources:
       SubnetId: !Ref SubnetA
 
 
-  SubnetARouteTableAssociation:
+  SubnetBRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref RouteTable
       SubnetId: !Ref SubnetB
 
 
-  SubnetARouteTableAssociation:
+  SubnetCRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref RouteTable

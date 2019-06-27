@@ -1,0 +1,338 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  AMI:
+
+    Type: 'AWS::EC2::Image::Id'
+
+    Description: AMI image id
+
+  Zone1:
+
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+
+    Description: List of zones in subnet
+
+ 
+  Zone2:
+
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+
+    Description: List of zones in subnet
+
+
+  AWSKEY:
+    
+    Type: 'AWS::EC2::KeyPair::KeyName'
+
+    Description: 'EC2 instance key'
+
+
+
+Resources:
+
+ 
+
+  VPC:
+
+    Type: AWS::EC2::VPC
+
+    Properties:
+
+      EnableDnsHostnames: yes
+      EnableDnsSupport: yes
+
+
+
+      CidrBlock: 10.0.0.0/16
+
+   
+
+  InternetGateway:
+
+    Type: AWS::EC2::InternetGateway
+
+
+
+  VPCGatewayAttachment:
+
+    Type: AWS::EC2::VPCGatewayAttachment
+
+    Properties:
+
+      VpcId: !Ref VPC
+
+      InternetGatewayId: !Ref InternetGateway
+
+  
+
+  SubnetA:
+
+    Type: AWS::EC2::Subnet
+
+    Properties:
+
+      AvailabilityZone: !Ref Zone1
+
+      VpcId: !Ref VPC
+
+      CidrBlock: 10.0.0.1/24
+
+      MapPublicIpOnLaunch: true
+
+
+
+
+
+  SubnetB:
+
+    Type: AWS::EC2::Subnet
+
+    Properties:
+
+      AvailabilityZone: !Ref Zone2
+
+      VpcId: !Ref VPC
+
+      CidrBlock: 10.0.1.0/24
+
+      MapPublicIpOnLaunch: true
+
+
+
+
+
+ 
+
+
+
+  RouteTable:
+
+    Type: AWS::EC2::RouteTable
+
+    Properties:
+
+      VpcId: !Ref VPC
+
+  
+
+
+
+  InternetRoute:
+
+    Type: AWS::EC2::Route
+
+    DependsOn: VPCGatewayAttachment
+
+    Properties:
+
+      DestinationCidrBlock: 0.0.0.0/0
+
+      GatewayId: !Ref InternetGateway
+
+      RouteTableId: !Ref RouteTable
+
+
+
+
+
+  SubnetARouteTableAssociation:
+
+    Type: AWS::EC2::SubnetRouteTableAssociation
+
+    Properties:
+
+      RouteTableId: !Ref RouteTable
+
+      SubnetId: !Ref SubnetA
+
+
+
+
+
+  SubnetBRouteTableAssociation:
+
+    Type: AWS::EC2::SubnetRouteTableAssociation
+
+    Properties:
+
+      RouteTableId: !Ref RouteTable
+
+      SubnetId: !Ref SubnetB
+
+
+
+
+
+  
+
+
+
+
+
+
+
+ 
+
+  
+
+    
+
+
+
+
+
+  
+
+
+
+
+
+ 
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+
+
+  WebAppSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties: 
+      GroupDescription: "webapp sec group"
+      
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22' 
+        CidrIp: 0.0.0.0/0
+
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80' 
+        CidrIp: 0.0.0.0/0
+     
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443' 
+        CidrIp: 0.0.0.0/0
+    
+  RDSSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties: 
+      GroupDescription: "RDS sec group"
+      
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '3306'
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '22'
+
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '80' 
+       
+
+
+
+
+
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+     
+      DisableApiTermination: No
+      ImageId: !Ref AMI
+
+      SecurityGroups: 
+      - !Ref WebAppSecurityGroup
+
+      KeyName: 'cloudsu2019.pem.pub'
+
+
+      InstanceType: "t2.micro"
+      BlockDeviceMappings:
+      - DeviceName: /dev/sda1
+        Ebs:
+          VolumeSize: 20
+
+
+  DyanamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+
+      AttributeDefinitions:
+      - AttributeName: "id"
+        AttributeType: S
+      KeySchema: 
+      - AttributeName: "id"
+        KeyType: "HASH"
+
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+    
+      
+      TableName: "csye6225"
+      
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 100
+
+      DBInstanceClass: db.m5.large
+      DBName: "csye6225"
+      Engine: MySQL 
+      MasterUserPassword: "csye6225password"
+      MasterUsername: "csye6225master"
+    
+      MultiAZ: No
+      DBSubnetGroupName: !Ref DBSubnetGroup
+
+      
+      PubliclyAccessible: yes
+      DBInstanceIdentifier: "csye6225-su19"
+
+
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "TMK"
+      
+      DBSubnetGroupName: "DBSubnetgroup"
+      SubnetIds: 
+      - !Ref SubnetA
+
+      - !Ref SubnetB
+          
+      
+    
+
+  
+      
+
+
+
+
+
+

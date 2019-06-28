@@ -162,61 +162,14 @@ Resources:
       SubnetId: !Ref SubnetB
 
 
-
-
-
-  
-
-
-
-
-
-
-
- 
-
-  
-
-    
-
-
-
-
-
-  
-
-
-
-
-
- 
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-  
-
-
-
-
-
-
-
   WebAppSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties: 
       GroupDescription: "webapp sec group"
+      GroupName: "csyesu2019-webappsecgroup"
       
+
+      VpcId: !Ref VPC
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '22'
@@ -232,29 +185,38 @@ Resources:
         FromPort: '443'
         ToPort: '443' 
         CidrIp: 0.0.0.0/0
+      
+
+
     
   RDSSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
+  
+    Type: AWS::RDS::DBSecurityGroup
     Properties: 
-      GroupDescription: "RDS sec group"
+
+      EC2VpcId: !Ref VPC
+      GroupDescription: "RDSsecgroup"
       
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: '22'
-        ToPort: '3306'
-      - IpProtocol: tcp
-        FromPort: '80'
-        ToPort: '22'
+      DBSecurityGroupIngress: 
+      - EC2SecurityGroupId: !GetAtt "WebAppSecurityGroup.GroupId"
 
-      - IpProtocol: tcp
-        FromPort: '443'
-        ToPort: '80' 
-       
+      
+
+  # RDSingress:   
+
+  #   Type: AWS::RDS::DBSecurityGroupIngress
+  #   Properties: 
+  
+  #     #DBSecurityGroupId: !GetAtt "RDSSecurityGroup.GroupId"
+
+  #     EC2SecurityGroupId: !GetAtt "WebAppSecurityGroup.GroupId"
+  
+
+  
 
 
-
-
-
+         
+         
 
   EC2Instance:
     Type: AWS::EC2::Instance
@@ -263,10 +225,11 @@ Resources:
       DisableApiTermination: No
       ImageId: !Ref AMI
 
-      SecurityGroups: 
-      - !Ref WebAppSecurityGroup
+      SecurityGroupIds: 
+        - !GetAtt "WebAppSecurityGroup.GroupId"
+      SubnetId: !Ref SubnetA
 
-      KeyName: 'cloudsu2019.pem.pub'
+      KeyName: !Ref AWSKEY
 
 
       InstanceType: "t2.micro"
@@ -304,10 +267,13 @@ Resources:
       Engine: MySQL 
       MasterUserPassword: "csye6225password"
       MasterUsername: "csye6225master"
+      DBSecurityGroups: 
+      - !Ref RDSSecurityGroup
     
       MultiAZ: No
+      Port: 3306
       DBSubnetGroupName: !Ref DBSubnetGroup
-
+      StorageType: gp2
       
       PubliclyAccessible: yes
       DBInstanceIdentifier: "csye6225-su19"
@@ -316,14 +282,18 @@ Resources:
 
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
+
     Properties:
+
       DBSubnetGroupDescription: "TMK"
       
       DBSubnetGroupName: "DBSubnetgroup"
+      
       SubnetIds: 
       - !Ref SubnetA
-
       - !Ref SubnetB
+
+
           
       
     

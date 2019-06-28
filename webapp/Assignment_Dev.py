@@ -2,6 +2,7 @@ from flask import (Flask,
     request,
     jsonify, url_for)
 from flask_sqlalchemy import SQLAlchemy
+from flaskext.mysql import MySQL
 import datetime
 import sqlite3
 import bcrypt
@@ -29,6 +30,17 @@ salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 """ Initiate flask in app """
 app = Flask("__name__")
 
+app.config['MYSQL_DATABASE_USER'] = 'root'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'filoplume'
+app.config['MYSQL_DATABASE_DB'] = 'MyWebApp'
+app.config['MYSQL_DATABASE_HOST'] = '127.0.0.1'
+
+db = MySQL()
+db.init_app(app)
+
+conn = db.connect()
+cur = conn.cursor()
+
 UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
 #print("upload folder", UPLOAD_FOLDER)
 
@@ -37,53 +49,53 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 """ Initiate database """
-db_path = os.path.join(os.path.dirname(__file__), 'Assignment01-dev-ad.db')
-db_uri = 'sqlite:///{}'.format(db_path)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+# db_path = os.path.join(os.path.dirname(__file__), 'Assignment01-dev-ad.db')
+# db_uri = 'sqlite:///{}'.format(db_path)
+# app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
 """ Create secret key for UUID in database """
 app.config['SECRET_KEY'] = 'my_key'
 
 """ Initiate sql-alchemy database in db """
-db = SQLAlchemy(app)
+#db = SQLAlchemy(app)
 
 """ PERSON TABLE """
-class Person(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(220), unique=True)
-    password = db.Column(db.String(220))
+# class Person(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     username = db.Column(db.String(220), unique=True)
+#     password = db.Column(db.String(220))
     
-    """ CONSTRUCTOR """
-    def __init__(self,username, password):
-        self.username = username
-        self.password = password
+#     """ CONSTRUCTOR """
+#     def __init__(self,username, password):
+#         self.username = username
+#         self.password = password
 
-""" BOOKS TABLE """
-class Books(db.Model):
-    id = db.Column('id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True, unique=True)
-    title = db.Column(db.String(100))
-    author = db.Column(db.String(100))
-    isbn = db.Column(db.String(100))
-    quantity = db.Column(db.Integer)
-    image_id = db.relationship('Image', backref='books', uselist=False)
+# """ BOOKS TABLE """
+# class Books(db.Model):
+#     id = db.Column('id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True, unique=True)
+#     title = db.Column(db.String(100))
+#     author = db.Column(db.String(100))
+#     isbn = db.Column(db.String(100))
+#     quantity = db.Column(db.Integer)
+#     image_id = db.relationship('Image', backref='books', uselist=False)
 
-    """ CONSTRUCTOR """
-    def __init__(self,title, author, isbn, quantity):
-        self.title = title
-        self.author = author
-        self.isbn = isbn
-        self.quantity = quantity
+#     """ CONSTRUCTOR """
+#     def __init__(self,title, author, isbn, quantity):
+#         self.title = title
+#         self.author = author
+#         self.isbn = isbn
+#         self.quantity = quantity
 
-""" IMAGE TABLE """
-class Image(db.Model):
-    id = db.Column('id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True, unique=True)
-    url = db.Column(db.String(500), unique=True)
-    book_id = db.Column(db.Text(length=36), db.ForeignKey('books.id'))
+# """ IMAGE TABLE """
+# class Image(db.Model):
+#     id = db.Column('id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True, unique=True)
+#     url = db.Column(db.String(500), unique=True)
+#     book_id = db.Column(db.Text(length=36), db.ForeignKey('books.id'))
 
-    """ CONSTRUCTOR """
-    def __init__(self,url, book_id):
-        self.url = url
-        self.book_id = book_id
+#     """ CONSTRUCTOR """
+#     def __init__(self,url, book_id):
+#         self.url = url
+#         self.book_id = book_id
         
 
 """ ROUTE TO ROOT """
@@ -94,15 +106,34 @@ def index():
     if not request.authorization:
         return jsonify("Unauthorized"), 401
 
+    # cur = db.connection.cursor()
+    dbUsername = request.authorization.username
+    # cur.execute("INSERT INTO MyUsers(firstName, lastName) VALUES (%s, %s)", (firstName, lastName))
+    conn = db.connect()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM Person where username=%s", dbUsername)
+    user = cur.fetchone()
+
+    print("**************************",user) 
+    print("**************************",user[0]) 
+    print("**************************",user[1])
+    print("**************************",user[2])  
+    # db.connection.commit()
+    
+
     """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
-    user = Person.query.filter_by(username=request.authorization.username).first()
+    #user = Person.query.filter_by(username=request.authorization.username).first()
     if not user:
         return jsonify("Unauthorized"), 401
     userData = {}
-    userData["username"] = user.username
-    userData["password"] = user.password
-    if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"])):
+    
+    userData["username"] = user[1]
+    userData["password"] = user[2]
+    if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+
+        cur.close()
         return jsonify(str(datetime.datetime.now())), 200
+    cur.close()
     return jsonify("Unauthorized"), 401
 
 """ REGISTER USER """
@@ -113,6 +144,7 @@ def retrieve_info():
             return jsonify("Bad request"), 400
         try:
             email = request.json.get('username')
+            print("email : ",email)
             if not email:
                 return jsonify("Bad request"), 400
 
@@ -124,6 +156,8 @@ def retrieve_info():
 
             """ VERIFY PASSWORD """
             myPassword = request.json.get('password')
+            print("Password : ", myPassword)
+
             if not myPassword:
                 return jsonify("Bad request"), 400
 
@@ -131,24 +165,36 @@ def retrieve_info():
             if policy.test(myPassword):
                 return jsonify("Password not strong enough"), 400
 
+            # cur = db.connection.cursor()
+            print("cur :", cur)
+            cur.execute("SELECT * FROM Person where username=%s", email)
+            user = cur.fetchone()
+            # print("user : ", len(user))
+            
+
+
+
+            print("usertype: ", type(user))
             """ CHECKING REPEATED USER """
-            if db.session.query(Person.username).filter_by(username=email).scalar() is not None:
+            if user is not None:
                 return jsonify("User already exists"), 200
 
             """ HASHING PASSWORD """
             password = bcrypt.hashpw(myPassword.encode('utf-8'), salt)
 
             """ ADDING USER TO TABLE """
-            test = Person(email, password)
-            
-            """ REGISTER USER """
-            db.session.add(test)
-            db.session.commit()
+            #test = Person(email, password)
+
+            cur.execute("INSERT INTO Person(id, username, password) VALUES (uuid(), %s, %s)", (email, password))
+
+            print("executed nsert")
+            conn.commit()
+            cur.close()
             return jsonify('User registered'), 200
         except Exception as e:
             return jsonify(e), 500
-    except:
-        return jsonify("Bad request"), 400
+    except Exception as e:
+        return jsonify(e), 400
 
 
 """
@@ -955,7 +1001,7 @@ def get_book_image(id, imgId):
 if __name__ == '__main__':
     
     """ CREATE DATABASE """
-    db.create_all()
+    # db.create_all()
 
     """ RUN FLASK APP """
     app.run()

@@ -2,6 +2,7 @@ from flask import (Flask,
     request,
     jsonify, url_for)
 from flask_sqlalchemy import SQLAlchemy
+from flaskext.mysql import MySQL
 import datetime
 import sqlite3
 import bcrypt
@@ -13,6 +14,9 @@ import json
 from password_strength import PasswordPolicy
 from password_strength import PasswordStats
 import re
+import boto3
+import os
+aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
 
 policy = PasswordPolicy.from_names(
     length=8,
@@ -23,11 +27,81 @@ policy = PasswordPolicy.from_names(
     strength=0.1  # need a password that scores at least 0.3 with its strength
 )
 
+"""
+    UPLOAD FOLDER TO AWS S3 BUCKET
+"""
+# def upload_on_s3(path):
+#     session = boto3.session.Session(
+#         aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
+#         aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+#         region_name = os.environ['AWS_REGION_NAME'])
+        
+#     s3 = session.resource("s3")
+#     bucket = s3.Bucket(aws_s3_bucket_name)
+#     print("bucket : ", bucket)
+
+#     print("path : ", os.walk(path))
+
+#     for subdir, dirs, files in os.walk(path):
+#         print("for 1")
+#         for file in files:
+#             print("for 2")
+#             full_path = os.path.join(subdir, file)
+#             print("for 3". full_path)
+#             with open(full_path, 'rb') as data:
+#                 bucket.put_object(key = full_path[len(path)+1:],Body=data)
+
+# def upload_on_s3( filename ):
+
+#     print("filename inupload: ", os.path.dirname(__file__) + "Images"+ "/" + filename)
+#     key_filename = "Images"+ "/" + filename
+#     print(key_filename)
+#     filename = filename
+
+#     s3 = boto3.client(
+#         "s3",
+#         aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
+#         aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+#     )   
+#     bucket_resource = s3
+
+#     print("bucket_resource", bucket_resource)
+
+#     bucket_resource.upload_file(
+#         Bucket = aws_s3_bucket_name,
+#         Filename=filename,
+#         Key=key_filename
+#     )
+#     print("uploAD SUCCESSFULL")
+
+# s3_key = filename
+def upload_on_s3(filename):
+
+    s3_key = filename
+    print("S# KEY", s3_key)
+    bucketName = 'csye6225-su19-deogade.me.csye6225.com'
+    outPutName = filename
+    s3 = boto3.client("s3")
+    s3.upload_file(s3_key,bucketName,outPutName)
+    print("UPLOADED")
+
+
 """ Set salt encoding beginning code"""
 salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 
 """ Initiate flask in app """
 app = Flask("__name__")
+
+app.config['MYSQL_DATABASE_USER'] = 'root'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
+app.config['MYSQL_DATABASE_DB'] = 'MyWebApp'
+app.config['MYSQL_DATABASE_HOST'] = '127.0.0.1'
+
+db = MySQL()
+db.init_app(app)
+
+conn = db.connect()
+cur = conn.cursor()
 
 UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
 #print("upload folder", UPLOAD_FOLDER)
@@ -37,53 +111,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 """ Initiate database """
-db_path = os.path.join(os.path.dirname(__file__), 'Assignment01-dev-ad.db')
-db_uri = 'sqlite:///{}'.format(db_path)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+# db_path = os.path.join(os.path.dirname(__file__), 'Assignment01-dev-ad.db')
+# db_uri = 'sqlite:///{}'.format(db_path)
+# app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
 """ Create secret key for UUID in database """
 app.config['SECRET_KEY'] = 'my_key'
-
-""" Initiate sql-alchemy database in db """
-db = SQLAlchemy(app)
-
-""" PERSON TABLE """
-class Person(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(220), unique=True)
-    password = db.Column(db.String(220))
-    
-    """ CONSTRUCTOR """
-    def __init__(self,username, password):
-        self.username = username
-        self.password = password
-
-""" BOOKS TABLE """
-class Books(db.Model):
-    id = db.Column('id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True, unique=True)
-    title = db.Column(db.String(100))
-    author = db.Column(db.String(100))
-    isbn = db.Column(db.String(100))
-    quantity = db.Column(db.Integer)
-    image_id = db.relationship('Image', backref='books', uselist=False)
-
-    """ CONSTRUCTOR """
-    def __init__(self,title, author, isbn, quantity):
-        self.title = title
-        self.author = author
-        self.isbn = isbn
-        self.quantity = quantity
-
-""" IMAGE TABLE """
-class Image(db.Model):
-    id = db.Column('id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True, unique=True)
-    url = db.Column(db.String(500), unique=True)
-    book_id = db.Column(db.Text(length=36), db.ForeignKey('books.id'))
-
-    """ CONSTRUCTOR """
-    def __init__(self,url, book_id):
-        self.url = url
-        self.book_id = book_id
         
 
 """ ROUTE TO ROOT """
@@ -94,15 +127,36 @@ def index():
     if not request.authorization:
         return jsonify("Unauthorized"), 401
 
+    # cur = db.connection.cursor()
+    dbUsername = request.authorization.username
+    print("dbUsername",dbUsername)
+    # cur.execute("INSERT INTO MyUsers(firstName, lastName) VALUES (%s, %s)", (firstName, lastName))
+    conn = db.connect()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM Person where username=%s", dbUsername)
+    user = cur.fetchone()
+
+    # print("**************************",user) 
+    # print("**************************",user["username"]) 
+    # print("**************************",user["id"])
+    print("**************************",user[2])  
+    # db.connection.commit()
+    
+
     """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
-    user = Person.query.filter_by(username=request.authorization.username).first()
+    #user = Person.query.filter_by(username=request.authorization.username).first()
     if not user:
         return jsonify("Unauthorized"), 401
     userData = {}
-    userData["username"] = user.username
-    userData["password"] = user.password
-    if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"])):
+    
+    userData["username"] = user[1]
+
+    userData["password"] = user[2]
+    if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+
+        cur.close()
         return jsonify(str(datetime.datetime.now())), 200
+    cur.close()
     return jsonify("Unauthorized"), 401
 
 """ REGISTER USER """
@@ -113,6 +167,7 @@ def retrieve_info():
             return jsonify("Bad request"), 400
         try:
             email = request.json.get('username')
+            print("email : ",email)
             if not email:
                 return jsonify("Bad request"), 400
 
@@ -124,6 +179,8 @@ def retrieve_info():
 
             """ VERIFY PASSWORD """
             myPassword = request.json.get('password')
+            print("Password : ", myPassword)
+
             if not myPassword:
                 return jsonify("Bad request"), 400
 
@@ -131,24 +188,36 @@ def retrieve_info():
             if policy.test(myPassword):
                 return jsonify("Password not strong enough"), 400
 
+            # cur = db.connection.cursor()
+            print("cur :", cur)
+            cur.execute("SELECT * FROM Person where username=%s", email)
+            user = cur.fetchone()
+            # print("user : ", len(user))
+            
+
+
+
+            print("usertype: ", type(user))
             """ CHECKING REPEATED USER """
-            if db.session.query(Person.username).filter_by(username=email).scalar() is not None:
+            if user is not None:
                 return jsonify("User already exists"), 200
 
             """ HASHING PASSWORD """
             password = bcrypt.hashpw(myPassword.encode('utf-8'), salt)
 
             """ ADDING USER TO TABLE """
-            test = Person(email, password)
-            
-            """ REGISTER USER """
-            db.session.add(test)
-            db.session.commit()
+            #test = Person(email, password)
+
+            cur.execute("INSERT INTO Person(id, username, password) VALUES (uuid(), %s, %s)", (email, password))
+
+            print("executed nsert")
+            conn.commit()
+            cur.close()
             return jsonify('User registered'), 200
         except Exception as e:
             return jsonify(e), 500
-    except:
-        return jsonify("Bad request"), 400
+    except Exception as e:
+        return jsonify(e), 400
 
 
 """
@@ -178,8 +247,8 @@ def delete_book(id):
         if not user:
             return jsonify("Unauthorized"), 401
         userData = {}
-        userData["username"] = user.username
-        userData["password"] = user.password  
+        userData["username"] = user[1]
+        userData["password"] = user[2]
 
         """ VERIFY TOKEN """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
@@ -235,8 +304,8 @@ def request_a_book(id):
         if not user:
             return jsonify("Unauthorized"), 401
         userData = {}
-        userData["username"] = user.username
-        userData["password"] = user.password  
+        userData["username"] = user[1]
+        userData["password"] = user[2] 
 
         """ VERIFY TOKEN """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
@@ -329,8 +398,8 @@ def update_book():
         if not user:
             return jsonify("Unauthorized"), 401
         userData = {}
-        userData["username"] = user.username
-        userData["password"] = user.password  
+        userData["username"] = user[1]
+        userData["password"] = user[2]  
 
         """ VERIFY TOKEN """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
@@ -420,10 +489,14 @@ def update_book():
 def register_book():
     try:
 
+        
+
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get("Authorization"):
             return jsonify("Unauthorized"), 401
         myHeader = request.headers["Authorization"]
+        print("header : ", myHeader)
+
         if (myHeader == None):
             return jsonify("Unauthorized"), 401
 
@@ -432,45 +505,59 @@ def register_book():
 
         dataDict = {}
         dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+        print("header data dict: ", dataDict)
+        # print(dbUsername)
 
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-        user = Person.query.filter_by(username=dataDict["username"]).first()
+        # print("cur",cur)
+        print("username :",dataDict["username"])
+        conn = db.connect()
+        cur = conn.cursor()
+        print("CUR",cur)
+        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        user = cur.fetchone()
+        print("user : ",user[1])
+
+        # user = Person.query.filter_by(username=dataDict["username"]).first()
         if not user:
+            print("User null")
             return jsonify("Unauthorized"), 401
+
         userData = {}
-        userData["username"] = user.username
-        userData["password"] = user.password
+        userData["username"] = user[1]
+        userData["password"] = user[2]
+        print(user[2])
+        print("user2: ",userData['password'])
 
         """ VERIFY USER """
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+            print("in if")
             if not request.json:
                 print("if not json")
                 return jsonify("Bad request"), 400
             try:
-
+                print("try")
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
                 #book.id = bookId
                 book_data = request.get_json()
-                print(book_data)
-                image_data = book_data['image']
-                print(image_data)
-                title = book_data['title']
-                print(title)
-                print(book_data['author'])
-                author = book_data['author']
-                print(author)
-                isbn = book_data['isbn']
-                print(isbn)
-                quantity = book_data['quantity']
-                print(quantity)
-                book_id = image_data['id']
                 
+                image_data = book_data['image']
+                
+                title = book_data['title']
+                author = book_data['author']
+                isbn = book_data['isbn']
+                quantity = book_data['quantity']
+        
+                print("book", book_data)
+                book_id = image_data['id']
+                url = image_data['url']
+                cur.close()
 
                 #image_id = 
 
                 """ ADD BOOK IN DATABASE """
-                test = Books(title, author, isbn, quantity)
-                print(test)
+                # test = Books(title, author, isbn, quantity)
+                # print(test)
                 # print(url)
                 # print(book_id)
                 
@@ -480,16 +567,20 @@ def register_book():
                 # print("Committed")
                 # book = db.session.query(Books).filter_by(id=bookId).first()
                 # book_id = book.id
-                url = image_data['url']
+                
 
                 if not url:
                     print("Inside")
                     if not book_id:
-                        print("Beifre dcommitting")
-                        db.session.add(test)
-                        print("test added")
-                        db.session.commit()
-                        print("Committed")
+                        print("in book id")
+                        conn = db.connect()
+                        cur = conn.cursor()
+                        cur.execute("INSERT INTO Books(id, title, author, quantity, isbn) VALUES(uuid(), title, author, quantity, isbn)")
+                        # db.session.add(test)
+                        # db.session.commit()
+                        print("CUR",cur)
+                        conn.commit()
+                        cur.close()
                         return jsonify("Posted"), 200
 
                 # is not None and book_id is not None:
@@ -525,12 +616,14 @@ def register_book():
                 resUm = json.loads(json1)
                 print (resUm)
                 resUm['Image'] = json.loads(json2)
+                print("no ans")
                 return json.dumps(resUm, indent=4), 200
             except Exception as e:
                 print("in exception")
                 return jsonify("Bad request"), 400
         return jsonify("Unauthorized"), 401
     except Exception as e:
+        print("outer exception")
         return jsonify("Unauthorized"), 401
 
 
@@ -559,17 +652,28 @@ def request_all_books():
         dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
 
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-        user = Person.query.filter_by(username=dataDict["username"]).first()
+        # user = Person.query.filter_by(username=dataDict["username"]).first()
+        conn = db.connect()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        user = cur.fetchone()
+
         if not user:
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user.username
-        userData["password"] = user.password
+        userData["username"] = user[1]
+        userData["password"] = user[2]
 
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
-            books = db.session.query(Books).all()
-            img_es = db.session.query(Image).all()
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+            cur.execute("SELECT * FROM Books")
+            books = cur.fetchall()
+            cur.execute("SELECT * FROM Image")
+            img_es = cur.fetchall()
+
+            # books = db.session.query(Books).all()
+            # img_es = db.session.query(Image).all()
             print("****",img_es)
             print("My book:", books)
 
@@ -577,11 +681,11 @@ def request_all_books():
             for book in books:
                 if not img_es:
                     bookData = {}
-                    bookData["id"] = book.id
-                    bookData["title"] = book.title
-                    bookData["author"] = book.author
-                    bookData["isbn"] = book.isbn
-                    bookData["quantity"] = book.quantity
+                    bookData["id"] = book[0]
+                    bookData["title"] = book[1]
+                    bookData["author"] = book[2]
+                    bookData["isbn"] = book[3]
+                    bookData["quantity"] = book[4]
                     bookData['Image'] = ''
                     json1 = json.dumps(bookData, indent=4)
                     image_array = {}
@@ -598,11 +702,12 @@ def request_all_books():
                     for img in img_es:
 
                         bookData = {}
-                        bookData["id"] = book.id
-                        bookData["title"] = book.title
-                        bookData["author"] = book.author
-                        bookData["isbn"] = book.isbn
-                        bookData["quantity"] = book.quantity
+                        bookData["id"] = book[0]
+                        bookData["title"] = book[1]
+                        bookData["author"] = book[2]
+                        bookData["isbn"] = book[3]
+                        bookData["quantity"] = book[4]
+
                         bookData['Image'] = ''
                         json1 = json.dumps(bookData, indent=4)
 
@@ -610,10 +715,10 @@ def request_all_books():
                         # if img_es.id:
                         if img.book_id==book.id:
                             image_array = {}
-                            print("img_es.id ",img.id)
-                            image_array["id"] = img.id
-                            image_array["url"] = img.url
-                            image_array["book_id"] = img.book_id
+                            print("img_es.id ",img[0])
+                            image_array["id"] = img[0]
+                            image_array["url"] = img[1]
+                            image_array["book_id"] = img[2]
                             json2 = json.dumps(image_array, indent=4)
                             print(json2)
                             resUm = json.loads(json1)
@@ -631,13 +736,16 @@ def request_all_books():
                             resUm['Image'] = json.loads(json2)
                             jsonFile = json.dumps(resUm)
                             output.append(jsonFile)
+
+                            conn.close()
             return jsonify(output), 200
 
-
+            print("first try end")
 
                 # return jsonify(), 201
         return jsonify("Unauthorized"), 401
     except Exception as e:
+        print("first try exception")
         return jsonify(e), 500
 
 
@@ -649,6 +757,9 @@ def allowed_file(filename):
 """ Upload book image """
 @app.route("/book/<string:id>/image", methods=["POST"])
 def upload_image(id):
+
+    conn = db.connect()
+    cur = conn.cursor()
 
     """ AUTHENTICATE BY TOKEN """
     if not request.headers.get("Authorization"):
@@ -663,16 +774,18 @@ def upload_image(id):
     dataDict = {}
     dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
 
-    """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-    user = Person.query.filter_by(username=dataDict["username"]).first()
+
+    cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+    user = cur.fetchone()
+
     if not user:
         return jsonify("Unauthorized"), 401
     userData = {}
-    userData["username"] = user.username
-    userData["password"] = user.password
+    userData["username"] = user[1]
+    userData["password"] = user[2]
 
     """ VERIFY USER """
-    if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+    if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
         if not request.json:
             jsonify("Bad request"), 400
         try:
@@ -689,6 +802,7 @@ def upload_image(id):
 
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
+                    # upload_on_s3
 
                     print("filename: ",filename)
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
@@ -702,39 +816,51 @@ def upload_image(id):
                         return jsonify("Bad request"), 400
 
                     """ OBTAIN BOOK BY ID """
-                    book = db.session.query(Books).filter_by(id=bookId).first()
+                    cur.execute("SELECT * FROM Books where id=%s", bookId)
+                    book = cur.fetchone()
+                    # book = db.session.query(Books).filter_by(id=bookId).first()
                     if (book == None):
                         return jsonify("No content"), 204
 
+                    cur.execute("INSERT INTO Image(id, url, book_id) VALUES (uuid(),%s, %s)", (url_for_image, bookId))
+                    conn.commit()
+
+                    '''upload image on S_3 bucket'''
+                    upload_on_s3(url_for_image)
+
 
                     """ ADD IMAGE in table IMAGE"""
-                    img = Image(url_for_image, bookId)
-                    db.session.add(img)
-                    db.session.commit()
+                    # img = Image(url_for_image, bookId)
+                    # db.session.add(img)
+                    # db.session.commit()
+
 
                     """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""
-                    image = db.session.query(Image).filter_by(book_id=bookId).first()
+                    cur.execute("SELECT * FROM Image where book_id=%s", bookId)
+                    image = cur.fetchone()
+
+                    # image = db.session.query(Image).filter_by(book_id=bookId).first()
                     print(image)
-                    print(image.id)
+                    print(image[0])
                     #db.session.commit()
 
-                    print("image id: ", image.id)
+                    print("image id: ", image[0])
 
                     """ DISPLAY BOOK DETAILS """
                     bookData = {}
-                    bookData["id"] = book.id
-                    bookData["title"] = book.title
-                    bookData["author"] = book.author
-                    bookData["isbn"] = book.isbn
-                    bookData["quantity"] = book.quantity
+                    bookData["id"] = book[0]
+                    bookData["title"] = book[1]
+                    bookData["author"] = book[2]
+                    bookData["isbn"] = book[3]
+                    bookData["quantity"] = book[4]
                     bookData['Image'] = ''
                     # output.append(bookData)
                     json1 = json.dumps(bookData, indent=4)
 
                     image_array = {}
-                    image_array['id'] = image.id
+                    image_array['id'] = image[0]
                     #image_array['book_id'] = image.book_id
-                    image_array['url'] = image.url
+                    image_array['url'] = image[1]
 
                     json2 = json.dumps(image_array, indent=4)
                     print(json2)
@@ -744,7 +870,7 @@ def upload_image(id):
                     print (resUm)
                     resUm['Image'] = json.loads(json2)
                     #print (json.dumps(res)   
-                    
+                    cur.close()
 
                     return json.dumps(resUm, indent=4), 201
         except Exception as e:
@@ -776,8 +902,8 @@ def update_image(id, imgId):
     if not user:
         return jsonify("Unauthorized"), 401
     userData = {}
-    userData["username"] = user.username
-    userData["password"] = user.password
+    userData["username"] = user[1]
+    userData["password"] = user[2]
 
     """ VERIFY USER """
     if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
@@ -864,8 +990,8 @@ def delete_image(id, imgId):
         if not user:
             return jsonify("Unauthorized"), 401
         userData = {}
-        userData["username"] = user.username
-        userData["password"] = user.password  
+        userData["username"] = user[1]
+        userData["password"] = user[2]  
 
         """ VERIFY TOKEN """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
@@ -955,7 +1081,7 @@ def get_book_image(id, imgId):
 if __name__ == '__main__':
     
     """ CREATE DATABASE """
-    db.create_all()
+    # db.create_all()
 
     """ RUN FLASK APP """
     app.run()

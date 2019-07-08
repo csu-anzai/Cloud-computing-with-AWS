@@ -36,10 +36,10 @@ salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 """ Initiate flask in app """
 app = Flask("__name__")
 
-# if(production_run):
-# 	app.config['MYSQL_DATABASE_USER'] = 'root'
-# 	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
-# 	app.config['MYSQL_DATABASE_HOST'] = '127.0.0.1'
+if(production_run):
+	app.config['MYSQL_DATABASE_USER'] = 'root'
+	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
+	app.config['MYSQL_DATABASE_HOST'] = '127.0.0.1'
 
 if(local_run):
 	app.config['MYSQL_DATABASE_USER'] = 'root'
@@ -62,6 +62,35 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 """ Create secret key for UUID in database """
 app.config['SECRET_KEY'] = 'my_key'
         
+
+""" UPLOAD IMAGE on S3 """
+def upload_on_s3( filename ):
+
+    print("filename inupload: ", os.path.dirname(__file__) + "Images"+ "/" + filename)
+
+    key_filename = "/" + "Images"+ "/" + filename
+    print(key_filename)
+
+    #filename = filename
+
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
+        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+    )   
+    bucket_resource = s3
+
+    print("bucket_resource", bucket_resource)
+
+    bucket_resource.upload_file(
+        Bucket = aws_s3_bucket_name,
+        Filename=filename,
+        Key=key_filename
+    )
+    print("UPLOAD SUCCESSFULL")
+
+
+
 
 
 
@@ -646,12 +675,12 @@ def delete_book(id):
             	cur.execute("DELETE FROM Books WHERE id=%s", bookId)
             	conn.commit()
             else:
-                """ DELETE BOOK FROM DATABASE """
-                cur.execute("DELETE FROM Books WHERE id=%s", bookId)
-                conn.commit()
+            	""" DELETE BOOK FROM DATABASE """
+            	cur.execute("DELETE FROM Books WHERE id=%s", bookId)
+            	conn.commit()
 
-                cur.execute("DELETE FROM Image WHERE id=%s", img_set[0])
-                conn.commit()
+            	cur.execute("DELETE FROM Image WHERE id=%s", img_set[0])
+            	conn.commit()
             
             cur.close()
 
@@ -660,6 +689,343 @@ def delete_book(id):
     except Exception as e:
         return jsonify("Unauthorized"), 401
 
+
+
+
+""" Upload book image """
+@app.route("/book/<string:id>/image", methods=["POST"])
+def upload_image(id):
+
+    conn = db.connect()
+    cur = conn.cursor()
+
+    """ AUTHENTICATE BY TOKEN """
+    if not request.headers.get("Authorization"):
+        return jsonify("Unauthorized"), 401
+
+    myHeader = request.headers["Authorization"]
+    if (myHeader == None):
+        return jsonify("Unauthorized"), 401
+
+    decoded_header = base64.b64decode(myHeader)
+    decoded_header_by_utf = decoded_header.decode('utf-8')
+
+    dataDict = {}
+    dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+
+
+    cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+    user = cur.fetchone()
+
+    if not user:
+        return jsonify("Unauthorized"), 401
+
+    userData = {}
+    userData["username"] = user[1]
+    userData["password"] = user[2]
+
+    """ VERIFY USER """
+    if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+        if not request.json:
+            jsonify("Bad request"), 400
+
+        try:
+            if 'file' in request.files:
+
+                file = request.files['file']
+
+                if file.filename == '':
+                    print('No selected file')
+
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # upload_on_s3
+
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+                    """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
+                    bookId = id
+                    if (bookId == None):
+                        return jsonify("Bad request"), 400
+
+                    """ OBTAIN BOOK BY ID """
+                    cur.execute("SELECT * FROM Books where id=%s", bookId)
+                    book = cur.fetchone()
+
+                    if (book == None):
+                        return jsonify("No content"), 204
+
+                    cur.execute("SELECT * FROM Image WHERE book_id=%s", bookId)
+                    image = cur.fetchone()
+                    imageId = image[0]
+
+                    if image:
+                    	update_image(bookId, imageId)
+
+                    cur.execute("INSERT INTO Image(id, url, book_id) VALUES (uuid(),%s, %s)", (url_for_image, bookId))
+                    conn.commit()
+
+                    '''upload image on S_3 bucket'''
+                    #upload_on_s3(url_for_image)
+
+                    """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""
+                    cur.execute("SELECT * FROM Image where book_id=%s", bookId)
+                    image = cur.fetchone()
+
+                    """ DISPLAY BOOK DETAILS """
+                    bookData = {}
+                    bookData["id"] = book[0]
+                    bookData["title"] = book[1]
+                    bookData["author"] = book[2]
+                    bookData["isbn"] = book[3]
+                    bookData["quantity"] = book[4]
+                    bookData['Image'] = ''
+                    json1 = json.dumps(bookData, indent=4)
+
+                    image_array = {}
+                    image_array['id'] = image[0]
+                    image_array['url'] = image[2]
+
+                    json2 = json.dumps(image_array, indent=4)
+                    resUm = json.loads(json1)
+                    resUm['Image'] = json.loads(json2)
+ 
+                    cur.close()
+
+                    return json.dumps(resUm, indent=4), 201
+
+        except Exception as e:
+            return jsonify(e), 500
+
+
+
+"""
+GET BOOK IMAGE
+"""
+@app.route("/book/<string:id>/image/<string:imgId>", methods=["GET"])
+def get_book_image(id, imgId):
+    try:
+        bookId = id
+        imageId = imgId
+
+        conn = db.connect()
+        cur = conn.cursor()
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+        
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+        
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict = {}
+        dataDict["username"], dataDict["password"] = newData.split(":")
+
+        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        user = cur.fetchone()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+
+        userData = {}
+        userData["username"] = user[1]
+        userData["password"] = user[2]
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+            """ OBTAIN BOOK BY ID """
+            cur.execute("SELECT * FROM Image where id=%s and book_id=%s", (imageId, bookId))
+            image = cur.fetchone()
+
+            output = []
+            image_data = {}
+            image_data["id"] = image[0]
+            image_data["url"] = image[2]
+            
+            output.append(image_data)
+            cur.cose()
+
+            return jsonify(output),200
+
+        cur.close()
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+
+        print("in exception")
+        return jsonify("Unauthorized"), 401
+
+
+
+""" UPDATE BOOK IMAGE """
+@app.route("/book/<string:id>/image/<string:imgId>", methods=["PUT"])
+def update_image(id, imgId):
+    bookId = id
+    imageId = imgId
+
+    conn = db.connect()
+    cur = conn.cursor()
+
+    """ AUTHENTICATE BY TOKEN """
+    if not request.headers.get("Authorization"):
+        return jsonify("Unauthorized"), 401
+
+    myHeader = request.headers["Authorization"]
+    if (myHeader == None):
+        return jsonify("Unauthorized"), 401
+
+    decoded_header = base64.b64decode(myHeader)
+    decoded_header_by_utf = decoded_header.decode('utf-8')
+
+    dataDict = {}
+    dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+
+    """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+    cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
+    user = cur.fetchone()
+
+    if not user:
+        return jsonify("Unauthorized"), 401
+
+    userData = {}
+    userData["username"] = user[1]
+    userData["password"] = user[2]
+
+    """ VERIFY USER """
+    if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+        if not request.json:
+            jsonify("Bad request"), 400
+
+        try:
+            print ("in upload_image")
+
+            if 'file' in request.files:
+                print("file present")
+
+                file = request.files['file']
+                print (file.filename)
+
+                if file.filename == '':
+                    print('No selected file')
+
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+
+                    print("filename: ",filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+                    print("url: ", url_for_image)
+
+                    """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
+                    bookId = id
+                    if (bookId == None):
+                        return jsonify("Bad request"), 400
+
+                    """ OBTAIN BOOK BY ID """
+                    cur.execute("SELECT * FROM Books WHERE id=%s", bookId)
+                    book = cur.fetchone()
+                    print("book: ", book)
+
+                    if (book == None):
+                    	print("no book")
+                    	return jsonify("No content"), 204
+
+                    cur.execute("SELECT * FROM Image WHERE id=%s", imageId)
+                    imageDb = cur.fetchone()
+
+                    if imageDb:
+	                    cur.execute("UPDATE Image SET url=%s WHERE book_id=%s", (url_for_image, bookId))
+	                    conn.commit()
+	                    cur.close()
+
+	                # else:
+	                	# return jsonify('Cannot update'), 204
+
+                return jsonify('No Content'),204
+
+            return json.dumps(resUm, indent=4), 201
+        except Exception as e:
+            return jsonify(e), 500
+
+
+
+"""
+DELETE A IMAGE
+"""
+@app.route("/book/<string:id>/image/<string:imgId>", methods=["DELETE"])
+def delete_image(id, imgId):
+    try:
+        bookId = id
+        imageId = imgId
+
+        conn = db.connect()
+        cur = conn.cursor()
+
+        """ AUTHENTICATE BY TOKEN """
+        if not request.headers.get('Authorization'):
+            return jsonify("Unauthorized"), 401
+
+
+        """ OBTAIN HEADERS """
+        myHeader = request.headers["Authorization"]
+
+        
+        """ DECODE TOKEN """
+        data = base64.b64decode(myHeader)
+        newData = data.decode('utf-8')
+
+
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+        dataDict = {}
+        dataDict["username"], dataDict["password"] = newData.split(":")
+        cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
+        user = cur.fetchone()
+
+        if not user:
+            return jsonify("Unauthorized"), 401
+
+        userData = {}
+        userData["username"] = user[1]
+        userData["password"] = user[2]  
+
+        """ VERIFY TOKEN """
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+            """ OBTAIN BOOK BY ID """
+            # cur.execute("SELECT * FROM Books WHERE id=bookId")
+            # book = cur.fetchone()
+
+            cur.execute("SELECT book_id FROM Image WHERE id=%s", imgId)
+            image = cur.fetchone()
+
+            if (image == None):
+                return jsonify("No content"), 204
+
+            if (book == None):
+                return jsonify("No content"), 204
+
+            if image[0] == bookId:
+
+                """ DELETE BOOK FROM DATABASE """
+                cur.execute("DELETE FROM Image WHERE id=%s", imgId)
+                conn.commit()
+                cur.close()
+
+            return jsonify('No Content'),204
+
+        return jsonify("Unauthorized"), 401
+    except Exception as e:
+        return jsonify("Unauthorized"), 401
 
 
 def allowed_file(filename):

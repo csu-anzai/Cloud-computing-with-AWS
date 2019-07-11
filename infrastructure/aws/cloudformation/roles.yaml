@@ -5,31 +5,7 @@ Resources:
 
 
 
-  AWScodedeployEC2toS3:
-
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: CodeDeploy-EC2-S3
-     
-      
-      PolicyDocument:     
-        
-            
-        Version: 2012-10-17
-        Statement:
-          -
-          
-            Action: 
-              
-              - "s3:Get*"
-              - "s3:List*"
-
-               
-                
-            Effect: Allow
-            Resource: arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me
-      Users: 
-        - circleci 
+ 
             
         
   CircleCIUploadToS3:
@@ -173,22 +149,49 @@ Resources:
                
       Users: 
         - circleci 
+
+
+
+
+
+  AWScodedeployEC2toS3:
+
+    Type: AWS::IAM::Policy
+
+    Properties:
+      PolicyName: "CodeDeploy-EC2-S3"
+     
+      
+      PolicyDocument:     
+        
+            
+        Version: "2012-10-17"
+        Statement:
+          -
+          
+            Action: 
+              - s3:Get*
+              - s3:List*
+                
+            Effect: "Allow"
+            Resource: "arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me"
+
+        Roles: 
+          -
+            Ref: CodeDeployEC2ServiceRole
             
 
 
-  AWSCodedeploy:
-    Type: AWS::CodeDeploy::Application
+
+  CodeDeployEC2ServiceRole:
+    Type: AWS::IAM::Role
+    DependsOn: AWScodedeployEC2toS3 
+    
+    
     Properties: 
-      ApplicationName: csye6225-webapp
-      ComputePlatform: Server
-
-
-
-          
-        
-
-      
-          
+    AssumeRolePolicyDocument: !Ref AWScodedeployEC2toS3
+   
+      # 
 
 
 

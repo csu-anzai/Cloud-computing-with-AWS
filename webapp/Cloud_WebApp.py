@@ -52,7 +52,7 @@ db.init_app(app)
 
  
 ''' IMAGES FOLDER PATH '''
-UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
+UPLOAD_FOLDER = os.path.dirname(__file__) + "/Images"
 
 
 ''' ALLOWED EXTENSIONS FOR UPLOAD ''' 
@@ -463,7 +463,7 @@ def request_all_books():
                         bookData['Image'] = ''
                         json1 = json.dumps(bookData, indent=4)
 
-                        if img.book_id==book.id:
+                        if img[2]==book[0]:
                             image_array = {}
                             image_array["id"] = img[0]
                             image_array["url"] = img[1]
@@ -758,10 +758,12 @@ def upload_image(id):
 
                     cur.execute("SELECT * FROM Image WHERE book_id=%s", bookId)
                     image = cur.fetchone()
-                    imageId = image[0]
+                    print("Image:", image)
+                    # imageId = image[0]
 
                     if image:
-                    	update_image(bookId, imageId)
+                        imageId = image[0]
+                        update_image(bookId, imageId)
 
                     cur.execute("INSERT INTO Image(id, url, book_id) VALUES (uuid(),%s, %s)", (url_for_image, bookId))
                     conn.commit()
@@ -1032,6 +1034,16 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+
+@app.route('/shutdown', methods=['GET'])
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
 
 if __name__ == '__main__':
     

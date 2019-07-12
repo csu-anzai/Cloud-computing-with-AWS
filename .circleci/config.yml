@@ -36,10 +36,8 @@ jobs:
       - run:
           name: Make CodeDeploy API call
           command: |
-<<<<<<< HEAD
-          aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$S3_BUCKET,bundleType=zip,key=webapp.zip  
+            aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$S3_BUCKET,bundleType=zip,key=webapp.zip  
 
 
-=======
-            echo "Hello CodeDeploy"
->>>>>>> 1d1bcf7cbd0d651cce49700ed6a9bacf0cad5611
+
+

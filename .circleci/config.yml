@@ -15,6 +15,9 @@ jobs:
             ls -al
             cd ..
       - run:
+          name: Install awscli
+          command: sudo pip3.6 install awscli
+      - run:
           name: Zip Artifact
           command: |
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"

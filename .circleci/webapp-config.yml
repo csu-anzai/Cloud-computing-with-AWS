@@ -1,6 +1,9 @@
 version: 2
 jobs:
   build:
+    branches:
+      only:
+        - assignment5
     docker:
       - image: circleci/python:3.6-jessie
     steps:
@@ -40,3 +43,13 @@ jobs:
           name: Make CodeDeploy API call
           command: |
             echo "Hello CodeDeploy"
+
+
+  deploy:
+    machine:
+      enabled: true
+    working_directory: ~/circle-tmp-folder
+    steps:
+       - run:
+          name: Deploy
+          command: aws s3 sync /home/sup/assignment04/ccwebapp s3://code-deploy.csye6225-su19-patilsup.me / --delete

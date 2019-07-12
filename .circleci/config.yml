@@ -26,6 +26,8 @@ jobs:
           command: |
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             cd webapp && zip -r ~/webapp.zip *
+            ls -l
+            zip -r /home/circleci/webapp.zip . -i /home/webapp
       - run:
           name: Upload Artifact to S3
           command: |
@@ -35,13 +37,4 @@ jobs:
       - run:
           name: Make CodeDeploy API call
           command: |
-            echo "Hello CodeDeploy"
-  # deploy:
-  #   machine:
-  #     enabled: true
-  #   working_directory: ~/
-  #   steps:
-  #      - run:
-  #         name: Deploy
-  #         command: aws s3 cp ~/webapp.zip s3://code-deploy.csye6225-su19-deogade.me
-  #     
+            echo "Hello CodeDeploy"   

@@ -71,6 +71,13 @@ Resources:
         FromPort: '80'
         ToPort: '80' 
         CidrIp: 0.0.0.0/0
+
+      - IpProtocol: tcp
+        FromPort: '5000'
+        ToPort: '5000' 
+        CidrIp: 0.0.0.0/0
+
+
      
       - IpProtocol: tcp
         FromPort: '443'
@@ -111,7 +118,9 @@ Resources:
 
   EC2Instance:
     Type: AWS::EC2::Instance
+    DependsOn: RDSInstance
     Properties: 
+
      
       DisableApiTermination: No
       ImageId: !Ref AMI
@@ -133,11 +142,33 @@ Resources:
         Key: "Name"
         Value: "EC2codedeploy"
       UserData: 
-      -
-        export S3_BUCKET_NAME=csye6225-su19-thawalia.me.csye6225.com
-        export AWS_REGION=us-east-1
-        export AWS_ACCESS_KEY=AKIAIK6OQ6LP33GCMK5A
-        export AWS_SECRET_ACCESS_KEY_ID=PGn4h55HXyKfxQD+lL8dSYyRuY+xTFMbu/TvxjDX
+        Fn::Base64: !Sub |
+            #!/bin/bash -xe
+
+            echo "export RDS_INSTANCE=${RDSInstance.Endpoint.Address}" >> /etc/environment
+            
+            echo "export MYSQL_DATABASE_USER=csye6225master" >> /etc/environment
+            echo "export MYSQL_DATABASE_PASSWORD=csye6225password" >> /etc/environment
+            echo "export AWS_REGION_NAME=us-east-1" >> /etc/environment
+            echo "export PRODUCTION_RUN=True" >> /etc/environment
+
+
+          #echo "export S3_BUCKET_NAME=${s3.BucketName}" >> /etc/environment
+
+
+
+
+            
+
+
+
+          #echo "export DB_CONNECTION=${RDSInstance.Endpoint.Address}" >> $HOME/.bashrc
+
+
+           # export S3_BUCKET_NAME=csye6225-su19-thawalia.me.csye6225.com
+           # export AWS_REGION=us-east-1
+
+        
         
 
 
@@ -205,325 +236,6 @@ Resources:
 
 
 
-  AWScodedeployEC2toS3:
-
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: "CodeDeploy-EC2-S3"
-     
-      
-      PolicyDocument:     
-        
-            
-        Version: "2012-10-17"
-        Statement:
-          -
-          
-            Action: 
-              -
-                s3:Get*
-                s3:List*
-                
-            Effect: "Allow"
-            Resource: "arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me"
-      Users: 
-        - circleci 
-            
-        
-  CircleCIUploadToS3:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: "CircleCI-Upload-To-S3"
-     
-      
-      PolicyDocument:     
-        
-        Version: "2012-10-17"
-        Statement: 
-          - 
-            
-            Effect: "Allow"
-            Action: "s3:PutObject"
-                
-            Resource: "arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me"
-               
-      Users: 
-        - circleci 
-            
-
-  CirlceCICodeDeploy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: "CirlceCI-Code-Deploy"
-     
-      
-      PolicyDocument:     
-        
-        Version: "2012-10-17"
-        Statement:
-          -
-          
-           
-        
-            Effect": "Allow"
-            Action":
-              - 
-                codedeploy:RegisterApplicationRevision
-                codedeploy:GetApplicationRevision
-          
-            Resource: "arn:aws:codedeploy:us-east-1:419412470032:application:csye6225-webapp"
-          
-            Effect: "Allow"
-            Action:
-              - 
-                codedeploy:CreateDeployment
-                codedeploy:GetDeployment
-          
-            Resource: "*"
-        
-            Effect: "Allow"
-            Action: "codedeploy:GetDeploymentConfig"
-          
-            Resource:
-              - 
-                arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.OneAtATime
-                arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.HalfAtATime
-                arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.AllAtOnce
-          
-               
-      Users: 
-        - circleci 
-
-
-  circleciec2ami:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: "circleci-ec2-ami"
-     
-      
-      PolicyDocument:     
-        
-        Version: "2012-10-17"
-        Statement:
-          - 
-          
-            
-           
-            Effect": "Allow"
-            Action" :
-              - 
-                ec2:AttachVolume
-                ec2:AuthorizeSecurityGroupIngress
-                ec2:CopyImage
-                ec2:CreateImage
-                ec2:CreateKeypair
-                ec2:CreateSecurityGroup
-                ec2:CreateSnapshot
-                ec2:CreateTags
-                ec2:CreateVolume
-                ec2:DeleteKeyPair
-                ec2:DeleteSecurityGroup
-                ec2:DeleteSnapshot
-                ec2:DeleteVolume
-                ec2:DeregisterImage
-                ec2:DescribeImageAttribute
-                ec2:DescribeImages
-                ec2:DescribeInstances
-                ec2:DescribeInstanceStatus
-                ec2:DescribeRegions
-                ec2:DescribeSecurityGroups
-                ec2:DescribeSnapshots
-                ec2:DescribeSubnets
-                ec2:DescribeTags
-                ec2:DescribeVolumes
-                ec2:DetachVolume
-                ec2:GetPasswordData
-                ec2:ModifyImageAttribute
-                ec2:ModifyInstanceAttribute
-                ec2:ModifySnapshotAttribute
-                ec2:RegisterImage
-                ec2:RunInstances
-                ec2:StopInstances
-                ec2:TerminateInstances
-          
-            Resource : "*"
-      
-               
-      Users: 
-        - circleci 
-            
-
-
-
-
-
-          
-        
-
-      
-          
-
-
-
-
-
-
-
-
-
-
-
-
-  CodeDeployEC2ServiceRole:
-    Type: AWS::IAM::Role
-    DependsOn: AWScodedeployEC2toS3
-    Properties: 
-      AssumeRolePolicyDocument: !Ref AWScodedeployEC2toS3
-   
-      RoleName: CodeDeployEC2ServiceRole
-
-
-  AWSCodeDeployRole:
-    Type: AWS::IAM::Role
-    DependsOn: AWSCodeDeployServiceRole
-    Properties: 
-       Version: "2012-10-17"
-       Statement:
-        -
-          Effect: "Allow"
-          Action: 
-            -
-              autoscaling:CompleteLifecycleAction
-              autoscaling:DeleteLifecycleHook
-              "autoscaling:DescribeAutoScalingGroups"
-              "autoscaling:DescribeLifecycleHooks"
-              "autoscaling:PutLifecycleHook"
-              "autoscaling:RecordLifecycleActionHeartbeat"
-              "autoscaling:CreateAutoScalingGroup"
-              "autoscaling:UpdateAutoScalingGroup"
-              "autoscaling:EnableMetricsCollection"
-              "autoscaling:DescribeAutoScalingGroups"
-              "autoscaling:DescribePolicies"
-              "autoscaling:DescribeScheduledActions"
-              "autoscaling:DescribeNotificationConfigurations"
-              "autoscaling:DescribeLifecycleHooks"
-              "autoscaling:SuspendProcesses"
-              "autoscaling:ResumeProcesses"
-              "autoscaling:AttachLoadBalancers"
-              "autoscaling:PutScalingPolicy"
-              "autoscaling:PutScheduledUpdateGroupAction
-              "autoscaling:PutNotificationConfiguration"
-              "autoscaling:PutLifecycleHook"
-              "autoscaling:DescribeScalingActivities"
-              "autoscaling:DeleteAutoScalingGroup"
-              "ec2:DescribeInstances"
-              "ec2:DescribeInstanceStatus"
-              "ec2:TerminateInstances"
-              "tag:GetTags"
-              "tag:GetResources"
-              "sns:Publish"
-              "cloudwatch:DescribeAlarms"
-              "cloudwatch:PutMetricAlarm"
-              "elasticloadbalancing:DescribeLoadBalancers"
-              "elasticloadbalancing:DescribeInstanceHealth"
-              "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
-              "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
-              "elasticloadbalancing:DescribeTargetGroups"
-              "elasticloadbalancing:DescribeTargetHealth"
-              "elasticloadbalancing:RegisterTargets"
-              "elasticloadbalancing:DeregisterTargets"
-            
-          Resource: "*"
-        
-
-
-
-   
-  AWSCodeDeployServiceRole:
-    Type: AWS::IAM::Role
-    DependsOn: AWSCodeDeployRole
-  
-    Properties: 
-      Version: "2012-10-17"
-      Statement:
-        -
-          Effect: "Allow"
-          Action: 
-            -
-              Sid: ""
-              Effect: "Allow"
-              Principal: 
-                Service: 
-                  -
-                    "codedeploy.us-east-1.amazonaws.com"
-
-              Action": "sts:AssumeRole"
-
-        
-
-
-        
-   
-      
-
-
-
-
-         
-
-    
-     
-
-
-
-
-
-
-         
-
-    
-     
-
-
-
-
-
-
-
-  
-  AWSCodedeploy:
-    Type: AWS::CodeDeploy::Application
-    Properties: 
-      ApplicationName: csye6225-webapp
-      ComputePlatform: EC2/On-premises
-
-
-
-  AWScodedeploygroup:
-    Type: AWS::CodeDeploy::DeploymentGroup
-    DependsOn: AWSCodeDeployRole
-   
-    
-     
-        
-    Properties:
-
-     
-        
-    
-      ApplicationName: csye6225-webapp-deployment
-      
-        
-      DeploymentType:  In-place
-
-         
-      ServiceRoleArn: !Ref AWSCodeDeployServiceRole.Arn
-
-
- 
-                        
-                    
-                
             
 
 
@@ -545,3 +257,12 @@ Resources:
 
 
   
+
+
+
+
+
+
+
+
+

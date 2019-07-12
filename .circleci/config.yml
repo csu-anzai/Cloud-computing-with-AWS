@@ -28,7 +28,16 @@ jobs:
       - run:
           name: Make CodeDeploy API call
           command: |
-            aws s3 sync \home\circleci\webapp.zip s3://code-deploy.csye6225-su19-patilsup.me --delete
+           echo "hello"
+
+    deploy:
+    machine:
+      enabled: true
+    working_directory: ~/circleci
+    steps:
+       - run:
+          name: Deploy
+          command: aws s3 cp /home/circleci/webapp.zip s3://code-deploy.csye6225-su19-patilsup.me --delete
 
 
  

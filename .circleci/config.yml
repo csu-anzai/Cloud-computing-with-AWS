@@ -18,7 +18,7 @@ jobs:
           name: Zip Artifact
           command: |
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
-            zip -r ~/webapp.zip . -i ~/webapp
+            zip ~/webapp.zip . -i ~/webapp
       - run:
           name: Upload Artifact to S3
           command: |
@@ -34,5 +34,5 @@ jobs:
     steps:
        - run:
           name: Deploy
-          command: aws s3 cp ~/webapp.zip s3://code-deploy.csye6225-su19-deogade.me/
+          command: aws s3 cp ~/webapp.zip s3://code-deploy.csye6225-su19-deogade.me/Project
       

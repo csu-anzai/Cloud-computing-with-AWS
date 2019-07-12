@@ -18,10 +18,9 @@ import boto3
 from botocore.client import Config
 import os
 
-aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
+
 local_run = os.environ['LOCAL_RUN']
 production_run = os.environ['PRODUCTION_RUN']
-rds_instance = os.environ['RDS_INSTANCE']
 
 
 
@@ -40,18 +39,19 @@ salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 
 """ Initiate flask in app """
 app = Flask("__name__")
-print("rds instance", os.environ['RDS_INSTANCE'])
 
-# if(production_run):
-print("In production_run")
-print(production_run)
-app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
-app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-app.config['MYSQL_DATABASE_HOST'] = rds_instance
 
-# if(local_run):
-# 	app.config['MYSQL_DATABASE_USER'] = 'root'
+if(production_run):
+    print("In production_run")
+    print(production_run)
+    aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
+    app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
+    app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
+    app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+    app.config['MYSQL_DATABASE_HOST'] = os.environ['RDS_INSTANCE']
+
+# elif(local_run):
+# 	app.config['MYSQL_DATABASE_USER'] = "root"
 # 	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
 # 	app.config['MYSQL_DATABASE_DB'] = 'csye6225'
 # 	app.config['MYSQL_DATABASE_HOST'] = 'localhost'
@@ -96,6 +96,36 @@ def upload_on_s3( filename ):
         Key=key_filename
     )
     print("UPLOAD SUCCESSFULL")
+
+
+""" DELETE IMAGE FROM S3 BUCKET """
+def delete_image_from_s3( filename ):
+
+    key_filename = filename
+    print("key_filename : ", key_filename)
+
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
+        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+    )
+    bucket_resource = s3
+    print("bucket_resource", bucket_resource)
+    try:
+        # s3.deleteObject(
+        #   Bucket= aws_s3_bucket_name,
+        #   Key= key_filename
+        # ),
+
+        s3.delete_object(
+            Bucket = aws_s3_bucket_name,
+            Key=key_filename)
+    
+
+        print("deleted image from S3")            
+    except Exception as e:
+        print("Exception : ",e)
+
 
 
 def presignedUrl( filename ):
@@ -470,6 +500,7 @@ def request_all_books():
                     print("no images")
                     bookData = {}
                     bookData["id"] = book[0]
+                    print("Book 0", book[0])
                     bookData["title"] = book[1]
                     bookData["author"] = book[2]
                     bookData["isbn"] = book[3]
@@ -486,6 +517,7 @@ def request_all_books():
                     resUm['Image'] = json.loads(json2)
                     jsonFile = json.dumps(resUm)
                     output.append(jsonFile)
+                    print("output",output)
             
                 else:
                     for img in img_es:
@@ -503,6 +535,7 @@ def request_all_books():
                             image_array = {}
                             image_array["id"] = img[0]
                             image_array["url"] = img[1]
+                            print("Image 1", img[1])
                             image_array["book_id"] = img[2]
                             json2 = json.dumps(image_array, indent=4)
 
@@ -513,6 +546,7 @@ def request_all_books():
                             output.append(jsonFile)
 
                             cur.close()
+                            
 
                         else:
                             image_array = {}
@@ -526,6 +560,7 @@ def request_all_books():
                             output.append(jsonFile)
 
                             cur.close()
+                            
 
             return jsonify(output), 200
 
@@ -704,8 +739,12 @@ def delete_book(id):
         """ VERIFY TOKEN """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
-            cur.execute("SELECT id FROM Image where book_id=%s", bookId)
+            cur.execute("SELECT * FROM Image where book_id=%s", bookId)
             img_set =cur.fetchone()
+            print("print img_set: ", img_set)
+
+            imageUrl = img_set[1]
+            print("url: ",imageUrl)
 
             if not img_set:
             	cur.execute("DELETE FROM Books WHERE id=%s", bookId)
@@ -719,6 +758,10 @@ def delete_book(id):
             	conn.commit()
             
             cur.close()
+
+            # if not local_run:
+            ''' DELETING IMAGE FROM S3 IF EXISIS '''
+            delete_image_from_s3(imageUrl)
 
             return jsonify(''),204
         return jsonify("Unauthorized"), 401
@@ -776,8 +819,11 @@ def upload_image(id):
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
                     # upload_on_s3
+                    print("My filename", filename)
 
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    # print(app.config['UPLOAD_FOLDER'])
+                    # file.save(filename)
                     url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
@@ -797,14 +843,22 @@ def upload_image(id):
                     print("Image:", image)
                     # imageId = image[0]
 
-                    if image:
+                    if image is None:
+                        
+                        print("printg **********")
+                    else:
+                        print("omage exists")
                         imageId = image[0]
-                        update_image(bookId, imageId)
+                        cur.execute("DELETE FROM Image WHERE book_id=%s", bookId)
+                        conn.commit()
+                        print("image deleted")
+                        
 
                     cur.execute("INSERT INTO Image(id, url, book_id) VALUES (uuid(),%s, %s)", (url_for_image, bookId))
                     conn.commit()
 
                     '''upload image on S_3 bucket'''
+                    # if production_run==True:
                     upload_on_s3(url_for_image)
 
                     """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""
@@ -893,21 +947,21 @@ def get_book_image(id, imgId):
                 image_data["id"] = image[0]
                 image_data["url"] = image[1]
 
-                if(local_run==1):
-                    print("IN LOCAL RUN")
-                    output.append(image_data)
-                    cur.cose()
-                    return jsonify(output),200
-                else:
-                    print("IN PRESIGNED URL")
-                    print("my urls is", image_data["url"])
-                    url_pre = str(image_data["url"])
-                    modified_url = presignedUrl(url_pre)
-                    print("url", modified_url)
-                    image_data["url"] = modified_url
-                    print("image data url", image_data["url"])
-                    output.append(image_data)
-                    return jsonify(output),200
+                # if(local_run==True):
+                #     print("IN LOCAL RUN")
+                #     output.append(image_data)
+                #     cur.cose()
+                #     return jsonify(output),200
+                # else:
+                print("IN PRESIGNED URL")
+                print("my urls is", image_data["url"])
+                url_pre = str(image_data["url"])
+                modified_url = presignedUrl(url_pre)
+                print("url", modified_url)
+                image_data["url"] = modified_url
+                print("image data url", image_data["url"])
+                output.append(image_data)
+                return jsonify(output),200
 
 
 
@@ -1029,59 +1083,72 @@ def delete_image(id, imgId):
         cur = conn.cursor()
 
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get('Authorization'):
+        if not request.headers.get("Authorization"):
+            print("no auth")
             return jsonify("Unauthorized"), 401
 
-
-        """ OBTAIN HEADERS """
         myHeader = request.headers["Authorization"]
+        print("headera: ", myHeader)
 
-        
-        """ DECODE TOKEN """
-        data = base64.b64decode(myHeader)
-        newData = data.decode('utf-8')
+        if (myHeader == None):
+            return jsonify("Unauthorized"), 401
 
+        decoded_header = base64.b64decode(myHeader)
+        decoded_header_by_utf = decoded_header.decode('utf-8')
+
+        dataDict = {}
+        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
 
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-        dataDict = {}
-        dataDict["username"], dataDict["password"] = newData.split(":")
         cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
         user = cur.fetchone()
+        print("user: ", user)
 
         if not user:
             return jsonify("Unauthorized"), 401
 
         userData = {}
         userData["username"] = user[1]
-        userData["password"] = user[2]  
+        userData["password"] = user[2]
 
-        """ VERIFY TOKEN """
+        """ VERIFY USER """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
             """ OBTAIN BOOK BY ID """
             # cur.execute("SELECT * FROM Books WHERE id=bookId")
             # book = cur.fetchone()
 
-            cur.execute("SELECT book_id FROM Image WHERE id=%s", imgId)
+            cur.execute("SELECT * FROM Image WHERE id=%s", imgId)
             image = cur.fetchone()
+            print("image :", image)
+            imageUrl = image[1]
 
             if (image == None):
                 return jsonify("No content"), 204
 
-            if (book == None):
-                return jsonify("No content"), 204
+            # if (book == None):
+            #     return jsonify("No content"), 204
 
-            if image[0] == bookId:
+            print("iamge book id : ", image[2])
+            print("book book id : ", bookId)
+
+            if image[2] == bookId:
+                print("in if")
 
                 """ DELETE BOOK FROM DATABASE """
-                cur.execute("DELETE FROM Image WHERE id=%s", imgId)
+                cur.execute("DELETE FROM Image WHERE id=%s", image[0])
                 conn.commit()
                 cur.close()
+
+                # if not local_run:
+                ''' DELETING IMAGE FROM S3 IF EXISIS '''
+                delete_image_from_s3(imageUrl)
 
             return jsonify('No Content'),204
 
         return jsonify("Unauthorized"), 401
     except Exception as e:
+        print("exception : ", e)
         return jsonify("Unauthorized"), 401
 
 

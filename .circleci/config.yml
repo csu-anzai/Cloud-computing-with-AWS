@@ -36,4 +36,4 @@ jobs:
     steps:
        - run:
           name: Deploy
-          command: aws s3 sync /home/circleci/webapp.zip s3://code-deploy.csye6225-su19-patilsup.me/ --delete
+          command: aws s3 cp /home/circleci/webapp.zip s3://code-deploy.csye6225-su19-patilsup.me/

@@ -39,7 +39,7 @@ jobs:
           command: 
             - aws-s3/sync:
                 from: /home/circleci/webapp.zip
-                to: 's3://code-deploy.csye6225-su19-patilsup.me/'
+                to: 's3://code-deploy.csye6225-su19-patilsup.me'
 
 
           #aws s3 cp /home/circleci/webapp.zip s3://code-deploy.csye6225-su19-patilsup.me/

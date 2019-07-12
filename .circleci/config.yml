@@ -12,7 +12,8 @@ jobs:
           name: Build Artifact
           command: |
             cd webapp
-	    cd ..
+            ls -al
+	          cd ..
       - run:
           name: Zip Artifact
           command: |

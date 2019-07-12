@@ -30,7 +30,7 @@ jobs:
   deploy:
     machine:
       enabled: true
-    working_directory: ~/webapp
+    working_directory: ~/
     steps:
        - run:
           name: Deploy

@@ -27,7 +27,6 @@ jobs:
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             cd webapp && zip -r ~/webapp.zip *
             ls -l
-            zip -r /home/circleci/webapp.zip . -i /home/webapp
       - run:
           name: Upload Artifact to S3
           command: |

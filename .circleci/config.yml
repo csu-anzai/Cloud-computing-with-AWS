@@ -9,19 +9,30 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Build artifacts
+          name: Build Artifact
           command: |
             cd webapp
+            ls -al
             cd ..
       - run:
-          name: Zip artifacts
+          name: Zip Artifact
           command: |
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
-            zip ~/webapp.zip . -i ~/webapp
-            ls -al
+            zip -r ~/webapp.zip . -i ~/webapp
       - run:
-          name: Upload artifacts to s3
+          name: Upload Artifact to S3
           command: |
-            echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
-            aws s3 cp ~/webapp.zip s3://code-deploy.csye6225-su19-deogade.me/
+            echo "Hello"
+      - run:
+          name: Make CodeDeploy API call
+          command: |
+            echo "Hello CodeDeploy"
+  deploy:
+    machine:
+      enabled: true
+    working_directory: ~/circle-tmp-folder
+    steps:
+       - run:
+          name: Deploy
+          command: aws s3 cp ~/webapp.zip s3://code-deploy.csye6225-su19-deogade.me/
       

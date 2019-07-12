@@ -15,12 +15,17 @@ from password_strength import PasswordPolicy
 from password_strength import PasswordStats
 import re
 import boto3
+from botocore.client import Config
 import os
 
 aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
 local_run = os.environ['LOCAL_RUN']
 production_run = os.environ['PRODUCTION_RUN']
+rds_instance = os.environ['RDS_INSTANCE']
 
+
+
+print("Production run value", production_run)
 policy = PasswordPolicy.from_names(
     length=8,
     uppercase=0,  # need min. 0 uppercase letters
@@ -35,24 +40,28 @@ salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 
 """ Initiate flask in app """
 app = Flask("__name__")
+print("rds instance", os.environ['RDS_INSTANCE'])
 
-if(production_run):
-	app.config['MYSQL_DATABASE_USER'] = 'root'
-	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
-	app.config['MYSQL_DATABASE_HOST'] = '127.0.0.1'
+# if(production_run):
+print("In production_run")
+print(production_run)
+app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
+app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+app.config['MYSQL_DATABASE_HOST'] = rds_instance
 
-if(local_run):
-	app.config['MYSQL_DATABASE_USER'] = 'root'
-	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
-	app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-	app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+# if(local_run):
+# 	app.config['MYSQL_DATABASE_USER'] = 'root'
+# 	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
+# 	app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+# 	app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 db = MySQL()
 db.init_app(app)
 
  
 ''' IMAGES FOLDER PATH '''
-UPLOAD_FOLDER = os.path.dirname(__file__) + "/Images"
+UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
 
 
 ''' ALLOWED EXTENSIONS FOR UPLOAD ''' 
@@ -65,10 +74,9 @@ app.config['SECRET_KEY'] = 'my_key'
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
+    print("filename inupload: ", os.path.dirname(__file__) +  filename)
 
-    print("filename inupload: ", os.path.dirname(__file__) + "Images"+ "/" + filename)
-
-    key_filename = "/" + "Images"+ "/" + filename
+    key_filename = filename
     print(key_filename)
 
     #filename = filename
@@ -90,7 +98,31 @@ def upload_on_s3( filename ):
     print("UPLOAD SUCCESSFULL")
 
 
+def presignedUrl( filename ):
+    filename = filename
+    print("filename : ", filename)
+    s3_client = boto3.client('s3',
+    aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
+        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+         config=Config(signature_version='s3v4'))
+    print("s3 client: ", s3_client)
+    try:
+        print("Bucket name:", aws_s3_bucket_name)
+        resp_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params = {
+            'Bucket': aws_s3_bucket_name,
+             'Key': filename,
+             },
+            ExpiresIn = 60*2
+        )
+        # return resp_url
 
+        print(resp_url)
+    except Exception as e:
+        print("Exception is:", e)
+    return resp_url
+    
 
 
 
@@ -295,32 +327,33 @@ def request_a_book(id):
         if not request.headers.get('Authorization'):
             return jsonify("Unauthorized"), 401
 
-        """ OBTAIN HEADERS """
+        """ OBTAIN HEADER """
         myHeader = request.headers["Authorization"]
+        if (myHeader == None):
+            return jsonify("Unauthorized"), 401
 
-        """ DECODE TOKEN """
-        data = base64.b64decode(myHeader)
-        newData = data.decode('utf-8')
+
+        decoded_header = base64.b64decode(myHeader)
+        decoded_header_by_utf = decoded_header.decode('utf-8')
+
         dataDict = {}
-
+        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+        print(dataDict)
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-        dataDict["username"], dataDict["password"] = newData.split(":")
+        # user = Person.query.filter_by(username=dataDict["username"]).first()
         conn = db.connect()
         cur = conn.cursor()
-        
-        cur.execute("SELECT username, password from Person where username=%s", dataDict["username"])
-        users = cur.fetchall()
-        cur.close();
+        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        user = cur.fetchone()
 
         if not user:
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[0]
-        userData["password"] = user[1] 
+        userData["username"] = user[1]
+        userData["password"] = user[2]
 
-        """ VERIFY TOKEN """
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"]):
+        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
             """ OBTAIN BOOK BY ID """
             conn = db.connect()
@@ -425,13 +458,16 @@ def request_all_books():
 
             cur.execute("SELECT * FROM Books")
             books = cur.fetchall()
+            print(len(books))
 
             cur.execute("SELECT * FROM Image")
             img_es = cur.fetchall()
+            print(len(img_es))
 
             output = []
             for book in books:
                 if not img_es:
+                    print("no images")
                     bookData = {}
                     bookData["id"] = book[0]
                     bookData["title"] = book[1]
@@ -609,7 +645,7 @@ def update_book():
         		return json.dumps(resUm, indent=4), 200
 
         	image_array['id'] = image[0]
-        	image_array['url'] = image[2]
+        	image_array['url'] = image[1]
 
         	json2 = json.dumps(image_array, indent=4)
         	resUm = json.loads(json1)
@@ -769,7 +805,7 @@ def upload_image(id):
                     conn.commit()
 
                     '''upload image on S_3 bucket'''
-                    #upload_on_s3(url_for_image)
+                    upload_on_s3(url_for_image)
 
                     """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""
                     cur.execute("SELECT * FROM Image where book_id=%s", bookId)
@@ -787,7 +823,7 @@ def upload_image(id):
 
                     image_array = {}
                     image_array['id'] = image[0]
-                    image_array['url'] = image[2]
+                    image_array['url'] = image[1]
 
                     json2 = json.dumps(image_array, indent=4)
                     resUm = json.loads(json1)
@@ -808,29 +844,30 @@ GET BOOK IMAGE
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["GET"])
 def get_book_image(id, imgId):
     try:
+        print("Getting pook image")
         bookId = id
+        # print("BOOK ID", bookId)
         imageId = imgId
 
+        print("bookid: " + bookId + "img id: "+imageId)
         conn = db.connect()
         cur = conn.cursor()
+        print("conn establised")
 
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get('Authorization'):
+        if not request.headers.get("Authorization"):
             return jsonify("Unauthorized"), 401
 
-
-        """ OBTAIN HEADERS """
         myHeader = request.headers["Authorization"]
+        if (myHeader == None):
+            return jsonify("Unauthorized"), 401
 
-        
-        """ DECODE TOKEN """
-        data = base64.b64decode(myHeader)
-        newData = data.decode('utf-8')
-        
+        decoded_header = base64.b64decode(myHeader)
+        decoded_header_by_utf = decoded_header.decode('utf-8')
 
-        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
         dataDict = {}
-        dataDict["username"], dataDict["password"] = newData.split(":")
+        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+
 
         cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
         user = cur.fetchone()
@@ -842,28 +879,46 @@ def get_book_image(id, imgId):
         userData["username"] = user[1]
         userData["password"] = user[2]
 
-        """ VERIFY TOKEN """
+        """ VERIFY USER """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
-            """ OBTAIN BOOK BY ID """
-            cur.execute("SELECT * FROM Image where id=%s and book_id=%s", (imageId, bookId))
-            image = cur.fetchone()
-
-            output = []
-            image_data = {}
-            image_data["id"] = image[0]
-            image_data["url"] = image[2]
             
-            output.append(image_data)
-            cur.cose()
+                """ OBTAIN BOOK BY ID from local db"""
+                cur.execute("SELECT * FROM Image where id=%s and book_id=%s", (imageId, bookId))
+                image = cur.fetchone()
+                print("MYIMAGE", image)
 
-            return jsonify(output),200
+                output = []
+                image_data = {}
+                image_data["id"] = image[0]
+                image_data["url"] = image[1]
+
+                if(local_run==1):
+                    print("IN LOCAL RUN")
+                    output.append(image_data)
+                    cur.cose()
+                    return jsonify(output),200
+                else:
+                    print("IN PRESIGNED URL")
+                    print("my urls is", image_data["url"])
+                    url_pre = str(image_data["url"])
+                    modified_url = presignedUrl(url_pre)
+                    print("url", modified_url)
+                    image_data["url"] = modified_url
+                    print("image data url", image_data["url"])
+                    output.append(image_data)
+                    return jsonify(output),200
+
+
+
+            
+
 
         cur.close()
         return jsonify("Unauthorized"), 401
     except Exception as e:
 
-        print("in exception")
+        print("in exception", e)
         return jsonify("Unauthorized"), 401
 
 
@@ -1051,5 +1106,8 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0')
 
 
-
+# def presignedUrl():
+#     s3_client = boto3.client('s3')
+#     resp = s3_client.generate_presigned_url('get_object', Params = {'Bucket': aws_s3_bucket_name, 'Key': }, ExpiresIn = 100)
+#     print(resp)
 

@@ -12,10 +12,8 @@ jobs:
           name: Build Artifact
           command: |
             cd webapp
-            ./gradlew war
-            cd build/libs
-            ls -al
-            cd ../../..
+	    ls -al
+            cd ..
       - run:
           name: Zip Artifact
           command: |

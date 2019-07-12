@@ -30,7 +30,7 @@ jobs:
           name: Upload Artifact to S3
           command: |
             echo "Hello"
-            aws s3 cp ~/webapp.zip s3://code-deploy.csye6225-su19-deogade.me
+            aws s3 cp ~/webapp.zip s3://$s3_bucket_name
             echo "Uploaded to s3"
       - run:
           name: Make CodeDeploy API call

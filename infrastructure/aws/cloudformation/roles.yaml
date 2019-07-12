@@ -23,7 +23,7 @@ Resources:
             Effect: Allow
             Action: s3:PutObject
                 
-            Resource: "arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me"
+            Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
                
       Users: 
         - circleci 
@@ -48,7 +48,12 @@ Resources:
               - codedeploy:RegisterApplicationRevision
               - codedeploy:GetApplicationRevision
           
-            Resource: arn:aws:codedeploy:us-east-1:419412470032:application:csye6225-webapp
+            #Resource: !Join ['', ['arn:aws:codedeploy:', !Join [':', [!Ref 'AWS::Region', !Ref 'AWS::AccountId',
+                #application,csye6225-webapp]], /*]]
+
+            Resource: !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId', application,csye6225-webapp]]
+
+            #Resource: arn:aws:codedeploy:us-east-1:419412470032:application:csye6225-webapp
           
             Effect: Allow
             Action:
@@ -62,10 +67,12 @@ Resources:
             Action: codedeploy:GetDeploymentConfig
           
             Resource:
-              - 
-                arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.OneAtATime
-                arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.HalfAtATime
-                arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.AllAtOnce
+              - !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId',deploymentconfig,CodeDeployDefault,OneAtATime]]
+              - !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId',deploymentconfig,CodeDeployDefault,HalfAtATime]]
+              - !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId',deploymentconfig,CodeDeployDefault,AllAtOnce]]
+               # arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.OneAtATime
+               # arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.HalfAtATime
+               # arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.AllAtOnce
           
                
       Users: 
@@ -154,43 +161,202 @@ Resources:
 
 
 
-  AWScodedeployEC2toS3:
+  CodeDeployEC2ServiceRole:
 
-    Type: AWS::IAM::Policy
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
 
-    Properties:
-      PolicyName: "CodeDeploy-EC2-S3"
-     
-      
-      PolicyDocument:     
-        
-            
-        Version: "2012-10-17"
+        Version : 2012-10-17
         Statement:
           -
-          
-            Action: 
-              - s3:Get*
-              - s3:List*
-                
-            Effect: "Allow"
-            Resource: "arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me"
+            Effect: Allow
+            Principal: 
+              AWS:
+                - 
+                  !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+                  #arn:aws:iam::419412470032:user/circleci
 
-        Roles: 
+               
+                  
+            
+            Action: 
+              -
+                sts:AssumeRole
+
+
+
+      Policies: 
+        -
+
+          PolicyName: CodeDeployEC2ServiceRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - s3:Get*
+                  - s3:List*
+                
+                Effect: Allow
+                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+            
+    
+
+    
+    
+    
+
+
+
+
+
+  CodeDeployServiceRole:
+
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+
+        Version : 2012-10-17
+        Statement:
           -
-            Ref: CodeDeployEC2ServiceRole
+            Effect: Allow
+            Principal: 
+
+              AWS:
+                - !Join [':', ['arn:aws:iam:', !Ref 'AWS::AccountId',user/circleci]]
+                #arn:aws:iam::419412470032:user/circleci
+
+              Service:
+                - codedeploy.us-east-1.amazonaws.com
+                
+
+               
+                  
+            
+            Action: 
+              -
+                sts:AssumeRole
+
+
+
+      Policies: 
+        -
+
+          PolicyName: AWSCodeDeployRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - autoscaling:CompleteLifecycleAction
+                  - autoscaling:DeleteLifecycleHook
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribeLifecycleHooks
+                  - autoscaling:PutLifecycleHook
+                  - autoscaling:RecordLifecycleActionHeartbeat
+                  - autoscaling:CreateAutoScalingGroups
+                  - autoscaling:UpdateAutoScalingGroup
+                  - autoscaling:EnableMetricsCollection
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribePolicies
+                  - autoscaling:DescribeScheduledActions
+                  - autoscaling:DescribeNotificationConfigurations
+                  - autoscaling:DescribeLifecycleHooks
+                  - autoscaling:SuspendProcesses
+                  - autoscaling:ResumeProcesses
+                  - autoscaling:AttachLoadBalancers
+                  - autoscaling:PutScalingPolicy
+                  - autoscaling:PutScheduledUpdateGroupAction
+                  - autoscaling:PutNotificationConfiguration
+                  - autoscaling:PutLifecycleHook
+                  - autoscaling:DescribeScalingActivities
+                  - autoscaling:DeleteAutoScalingGroup
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:TerminateInstances
+                  - tag:GetTags
+                  - tag:GetResources
+                  - sns:Publish
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:PutMetricAlarm
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeInstanceHealth
+                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeTargetHealth
+                  - elasticloadbalancing:RegisterTargets
+                  - elasticloadbalancing:DeregisterTargets
+          
+       
+                
+                Effect: Allow
+                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+ 
+                  #arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me
+            
+    #!Join [':', ['arn:aws:s3::',code-deploy!Ref 'AWS::AccountId',user/circelci]]
+
+    
+    
+    
+    
+
+
+
+
+
+ 
+  AWSCodedeploy:
+    Type: AWS::CodeDeploy::Application
+    Properties: 
+      ApplicationName: csye6225-webapp
+      ComputePlatform: Server
+
+
+
+  AWScodedeploygroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    DependsOn: CodeDeployServiceRole
+   
+    
+     
+        
+    Properties:
+
+     
+        
+    
+      ApplicationName: 
+        Ref: AWSCodedeploy
+
+
+      AutoRollbackConfiguration:
+        Enabled: No
+
+
+      DeploymentStyle: 
+        DeploymentType: IN_PLACE
+        DeploymentOption: WITHOUT_TRAFFIC_CONTROL
+
+
+         
+      ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
+
+
+
+
+
+
+ 
             
 
 
 
-  CodeDeployEC2ServiceRole:
-    Type: AWS::IAM::Role
-    DependsOn: AWScodedeployEC2toS3 
-    
-    
-    Properties: 
-    AssumeRolePolicyDocument: !Ref AWScodedeployEC2toS3
-   
+  
       # 
 
 

@@ -8,19 +8,37 @@ Parameters:
 
     Description: AMI image id
 
-  Zone1:
 
-    Type: 'AWS::EC2::AvailabilityZone::Name'
+
+  Subnet1:
+
+
+
+    Type: 'AWS::EC2::Subnet::Id'
+
+
 
     Description: List of zones in subnet
+
+
 
  
-  Zone2:
 
-    Type: 'AWS::EC2::AvailabilityZone::Name'
+  Subnet2:
+
+
+
+    Type: 'AWS::EC2::Subnet::Id'
+
+
 
     Description: List of zones in subnet
 
+  
+
+  VPC:
+    Type: 'AWS::EC2::VPC::Id'
+    Description: 'vpcid'
 
   AWSKEY:
     
@@ -34,134 +52,7 @@ Resources:
 
  
 
-  VPC:
-
-    Type: AWS::EC2::VPC
-
-    Properties:
-
-      EnableDnsHostnames: yes
-      EnableDnsSupport: yes
-
-
-
-      CidrBlock: 10.0.0.0/16
-
-   
-
-  InternetGateway:
-
-    Type: AWS::EC2::InternetGateway
-
-
-
-  VPCGatewayAttachment:
-
-    Type: AWS::EC2::VPCGatewayAttachment
-
-    Properties:
-
-      VpcId: !Ref VPC
-
-      InternetGatewayId: !Ref InternetGateway
-
   
-
-  SubnetA:
-
-    Type: AWS::EC2::Subnet
-
-    Properties:
-
-      AvailabilityZone: !Ref Zone1
-
-      VpcId: !Ref VPC
-
-      CidrBlock: 10.0.0.1/24
-
-      MapPublicIpOnLaunch: true
-
-
-
-
-
-  SubnetB:
-
-    Type: AWS::EC2::Subnet
-
-    Properties:
-
-      AvailabilityZone: !Ref Zone2
-
-      VpcId: !Ref VPC
-
-      CidrBlock: 10.0.1.0/24
-
-      MapPublicIpOnLaunch: true
-
-
-
-
-
- 
-
-
-
-  RouteTable:
-
-    Type: AWS::EC2::RouteTable
-
-    Properties:
-
-      VpcId: !Ref VPC
-
-  
-
-
-
-  InternetRoute:
-
-    Type: AWS::EC2::Route
-
-    DependsOn: VPCGatewayAttachment
-
-    Properties:
-
-      DestinationCidrBlock: 0.0.0.0/0
-
-      GatewayId: !Ref InternetGateway
-
-      RouteTableId: !Ref RouteTable
-
-
-
-
-
-  SubnetARouteTableAssociation:
-
-    Type: AWS::EC2::SubnetRouteTableAssociation
-
-    Properties:
-
-      RouteTableId: !Ref RouteTable
-
-      SubnetId: !Ref SubnetA
-
-
-
-
-
-  SubnetBRouteTableAssociation:
-
-    Type: AWS::EC2::SubnetRouteTableAssociation
-
-    Properties:
-
-      RouteTableId: !Ref RouteTable
-
-      SubnetId: !Ref SubnetB
-
-
   WebAppSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties: 
@@ -180,6 +71,13 @@ Resources:
         FromPort: '80'
         ToPort: '80' 
         CidrIp: 0.0.0.0/0
+
+      - IpProtocol: tcp
+        FromPort: '5000'
+        ToPort: '5000' 
+        CidrIp: 0.0.0.0/0
+
+
      
       - IpProtocol: tcp
         FromPort: '443'
@@ -220,14 +118,16 @@ Resources:
 
   EC2Instance:
     Type: AWS::EC2::Instance
+    DependsOn: RDSInstance
     Properties: 
+
      
       DisableApiTermination: No
       ImageId: !Ref AMI
 
       SecurityGroupIds: 
         - !GetAtt "WebAppSecurityGroup.GroupId"
-      SubnetId: !Ref SubnetA
+      SubnetId: !Ref Subnet1
 
       KeyName: !Ref AWSKEY
 
@@ -237,6 +137,45 @@ Resources:
       - DeviceName: /dev/sda1
         Ebs:
           VolumeSize: 20
+      Tags: 
+      - 
+        Key: "Name"
+        Value: "EC2codedeploy"
+      UserData: 
+        Fn::Base64: !Sub |
+            #!/bin/bash -xe
+
+            echo "export RDS_INSTANCE=${RDSInstance.Endpoint.Address}" >> /etc/environment
+            
+            echo "export MYSQL_DATABASE_USER=csye6225master" >> /etc/environment
+            echo "export MYSQL_DATABASE_PASSWORD=csye6225password" >> /etc/environment
+            echo "export AWS_REGION_NAME=us-east-1" >> /etc/environment
+            echo "export PRODUCTION_RUN=True" >> /etc/environment
+
+
+          #echo "export S3_BUCKET_NAME=${s3.BucketName}" >> /etc/environment
+
+
+
+
+            
+
+
+
+          #echo "export DB_CONNECTION=${RDSInstance.Endpoint.Address}" >> $HOME/.bashrc
+
+
+           # export S3_BUCKET_NAME=csye6225-su19-thawalia.me.csye6225.com
+           # export AWS_REGION=us-east-1
+
+        
+        
+
+
+      
+
+
+     
 
 
   DyanamoDBTable:
@@ -290,16 +229,37 @@ Resources:
       DBSubnetGroupName: "DBSubnetgroup"
       
       SubnetIds: 
-      - !Ref SubnetA
-      - !Ref SubnetB
+      - !Ref Subnet1
+      - !Ref Subnet2
 
 
-          
-      
-    
+
+
+
+            
+
+
 
   
-      
+        
+
+
+
+
+
+  
+        
+    
+
+
+
+
+
+
+  
+
+
+
 
 
 

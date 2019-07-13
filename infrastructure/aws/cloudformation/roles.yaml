@@ -1,0 +1,377 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+
+
+
+
+
+ 
+            
+        
+  CircleCIUploadToS3:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: "CircleCI-Upload-To-S3"
+     
+      
+      PolicyDocument:     
+        
+        Version: 2012-10-17
+        Statement: 
+          - 
+            
+            Effect: Allow
+            Action: s3:PutObject
+                
+            Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+               
+      Users: 
+        - circleci 
+            
+
+  CirlceCICodeDeploy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: CirlceCI-Code-Deploy
+     
+      
+      PolicyDocument:     
+        
+        Version: 2012-10-17
+        Statement:
+          -
+          
+           
+        
+            Effect: Allow
+            Action:
+              - codedeploy:RegisterApplicationRevision
+              - codedeploy:GetApplicationRevision
+          
+            #Resource: !Join ['', ['arn:aws:codedeploy:', !Join [':', [!Ref 'AWS::Region', !Ref 'AWS::AccountId',
+                #application,csye6225-webapp]], /*]]
+
+            Resource: !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId', application,csye6225-webapp]]
+
+            #Resource: arn:aws:codedeploy:us-east-1:419412470032:application:csye6225-webapp
+          
+            Effect: Allow
+            Action:
+              
+              - codedeploy:CreateDeployment
+              - codedeploy:GetDeployment
+          
+            Resource: "*"
+        
+            Effect: Allow
+            Action: codedeploy:GetDeploymentConfig
+          
+            Resource:
+              - !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId',deploymentconfig,CodeDeployDefault,OneAtATime]]
+              - !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId',deploymentconfig,CodeDeployDefault,HalfAtATime]]
+              - !Join [':', ['arn:aws:codedeploy:',!Ref 'AWS::Region', !Ref 'AWS::AccountId',deploymentconfig,CodeDeployDefault,AllAtOnce]]
+               # arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.OneAtATime
+               # arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.HalfAtATime
+               # arn:aws:codedeploy:us-east-1:419412470032:deploymentconfig:CodeDeployDefault.AllAtOnce
+          
+               
+      Users: 
+        - circleci 
+
+
+  circleciec2ami:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: circleci-ec2-ami
+     
+      
+      PolicyDocument:     
+        
+        Version: 2012-10-17
+        Statement:
+          - 
+          
+            
+           
+            Effect: Allow
+            Action:
+               
+              - "ec2:AttachVolume"
+              - "autoscaling:CompleteLifecycleAction"
+              - "autoscaling:DeleteLifecycleHook"
+              - "autoscaling:DescribeAutoScalingGroups"
+              - "autoscaling:DescribeLifecycleHooks"
+              - "autoscaling:PutLifecycleHook"
+              - "autoscaling:RecordLifecycleActionHeartbeat"
+              - "autoscaling:CreateAutoScalingGroup"
+              - "autoscaling:UpdateAutoScalingGroup"
+              - "autoscaling:EnableMetricsCollection"
+              - "autoscaling:DescribeAutoScalingGroups"
+              - "autoscaling:DescribePolicies"
+              - "autoscaling:DescribeScheduledActions"
+              - "autoscaling:DescribeNotificationConfigurations"
+              - "autoscaling:DescribeLifecycleHooks"
+              - "autoscaling:SuspendProcesses"
+              - "autoscaling:ResumeProcesses"
+              - "autoscaling:AttachLoadBalancers"
+              - "autoscaling:PutScalingPolicy"
+              - "autoscaling:PutScheduledUpdateGroupAction"
+              - "autoscaling:PutNotificationConfiguration"
+              - "autoscaling:PutLifecycleHook"
+              - "autoscaling:DescribeScalingActivities"
+              - "autoscaling:DeleteAutoScalingGroup"
+              - "ec2:DescribeInstances"
+              - "ec2:DescribeInstanceStatus"
+              - "ec2:TerminateInstances"
+              - "tag:GetTags"
+              - "tag:GetResources"
+              - "sns:Publish"
+              - "cloudwatch:DescribeAlarms"
+              - "cloudwatch:PutMetricAlarm"
+              - "elasticloadbalancing:DescribeLoadBalancers"
+              - "elasticloadbalancing:DescribeInstanceHealth"
+              - "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
+              - "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
+              - "elasticloadbalancing:DescribeTargetGroups"
+              - "elasticloadbalancing:DescribeTargetHealth"
+              - "elasticloadbalancing:RegisterTargets"
+              - "elasticloadbalancing:DeregisterTargets"
+            
+          
+        
+
+
+
+
+      
+
+
+        
+   
+      
+                
+          
+            Resource: "*"
+      
+               
+      Users: 
+        - circleci 
+
+
+
+
+
+  CodeDeployEC2ServiceRole:
+
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+
+        Version : 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal: 
+              AWS:
+                - 
+                  !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+                  #arn:aws:iam::419412470032:user/circleci
+
+               
+                  
+            
+            Action: 
+              -
+                sts:AssumeRole
+
+
+
+      Policies: 
+        -
+
+          PolicyName: CodeDeployEC2ServiceRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - s3:Get*
+                  - s3:List*
+                
+                Effect: Allow
+                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+            
+    
+
+    
+    
+    
+
+
+
+
+
+  CodeDeployServiceRole:
+
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+
+        Version : 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal: 
+
+              AWS:
+                - !Join [':', ['arn:aws:iam:', !Ref 'AWS::AccountId',user/circleci]]
+                #arn:aws:iam::419412470032:user/circleci
+
+              Service:
+                - codedeploy.us-east-1.amazonaws.com
+                
+
+               
+                  
+            
+            Action: 
+              -
+                sts:AssumeRole
+
+
+
+      Policies: 
+        -
+
+          PolicyName: AWSCodeDeployRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - autoscaling:CompleteLifecycleAction
+                  - autoscaling:DeleteLifecycleHook
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribeLifecycleHooks
+                  - autoscaling:PutLifecycleHook
+                  - autoscaling:RecordLifecycleActionHeartbeat
+                  - autoscaling:CreateAutoScalingGroups
+                  - autoscaling:UpdateAutoScalingGroup
+                  - autoscaling:EnableMetricsCollection
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribePolicies
+                  - autoscaling:DescribeScheduledActions
+                  - autoscaling:DescribeNotificationConfigurations
+                  - autoscaling:DescribeLifecycleHooks
+                  - autoscaling:SuspendProcesses
+                  - autoscaling:ResumeProcesses
+                  - autoscaling:AttachLoadBalancers
+                  - autoscaling:PutScalingPolicy
+                  - autoscaling:PutScheduledUpdateGroupAction
+                  - autoscaling:PutNotificationConfiguration
+                  - autoscaling:PutLifecycleHook
+                  - autoscaling:DescribeScalingActivities
+                  - autoscaling:DeleteAutoScalingGroup
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:TerminateInstances
+                  - tag:GetTags
+                  - tag:GetResources
+                  - sns:Publish
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:PutMetricAlarm
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeInstanceHealth
+                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeTargetHealth
+                  - elasticloadbalancing:RegisterTargets
+                  - elasticloadbalancing:DeregisterTargets
+          
+       
+                
+                Effect: Allow
+                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+ 
+                  #arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me
+            
+    #!Join [':', ['arn:aws:s3::',code-deploy!Ref 'AWS::AccountId',user/circelci]]
+
+    
+    
+    
+    
+
+
+
+
+
+ 
+  AWSCodedeploy:
+    Type: AWS::CodeDeploy::Application
+    Properties: 
+      ApplicationName: csye6225-webapp
+      ComputePlatform: Server
+
+
+
+  AWScodedeploygroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    DependsOn: CodeDeployServiceRole
+   
+    
+     
+        
+    Properties:
+
+     
+        
+    
+      ApplicationName: 
+        Ref: AWSCodedeploy
+
+
+      AutoRollbackConfiguration:
+        Enabled: No
+
+
+      DeploymentStyle: 
+        DeploymentType: IN_PLACE
+        DeploymentOption: WITHOUT_TRAFFIC_CONTROL
+
+
+         
+      ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
+
+
+
+
+
+
+ 
+            
+
+
+
+  
+      # 
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+   
+  

@@ -1,4 +1,4 @@
-stack_create=$(aws cloudformation create-stack --template-body file://csye6225-aws-cf-networking.yaml --stack-name summercloud2019-vpc --parameters ParameterKey=Zone1,ParameterValue=us-east-1a ParameterKey=Zone2,ParameterValue=us-east-1c ParameterKey=Zone3,ParameterValue=us-east-1d) 
+stack_create=$(aws cloudformation create-stack --template-body file://csye6225-cf-networking.yaml --stack-name summercloud2019-vpc --parameters ParameterKey=Zone1,ParameterValue=us-east-1a ParameterKey=Zone2,ParameterValue=us-east-1c ParameterKey=Zone3,ParameterValue=us-east-1d) 
 
 result=$(aws cloudformation wait stack-create-complete --stack-name summercloud2019-vpc)
 

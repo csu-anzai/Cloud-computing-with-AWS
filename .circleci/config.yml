@@ -4,6 +4,7 @@ jobs:
     branches:
       only:
         - assignment5
+        - master
     docker:
       - image: circleci/python:3.6-jessie
     steps:
@@ -36,4 +37,9 @@ jobs:
       - run:
           name: Make CodeDeploy API call
           command: |
-            echo "Hello CodeDeploy"
+            aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$s3_bucket_name,bundleType=zip,key=webapp.zip  
+
+
+
+
+#aa

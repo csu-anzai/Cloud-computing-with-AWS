@@ -29,5 +29,5 @@ read -p "enter the keypair" key
 read -p "enter the stack name" stack
 echo "$VPC"
 echo "This script is about to run another script."
-./csye6225-aws-cf-create-application-stack.sh "$ami" "$VPC" "$key" "$stack1" "$Subnet1" "$Subnet2"
+./csye6225-aws-cf-create-application-stack.sh "$ami" "$VPC" "$key" "$stack" "$Subnet1" "$Subnet2"
 echo "This script has just run another script."

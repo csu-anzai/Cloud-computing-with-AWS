@@ -330,8 +330,7 @@ Resources:
      
         
     
-      ApplicationName: 
-        csye6225-webapp-deployment
+      ApplicationName: csye6225-webapp-deployment
 
 
       AutoRollbackConfiguration:

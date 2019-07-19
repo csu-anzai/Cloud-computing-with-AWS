@@ -5,6 +5,7 @@ jobs:
       only:
         - assignment5
         - master
+        - assignment6
     docker:
       - image: circleci/python:3.6-jessie
     steps:

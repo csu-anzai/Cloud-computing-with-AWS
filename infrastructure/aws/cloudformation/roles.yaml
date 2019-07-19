@@ -330,11 +330,13 @@ Resources:
      
         
     
-      ApplicationName: csye6225-webapp-deployment
+      ApplicationName: !Ref AWSCodedeploy
 
 
       AutoRollbackConfiguration:
         Enabled: No
+      DeploymentGroupName: csye6225-webapp-deployment
+
 
 
       DeploymentStyle: 

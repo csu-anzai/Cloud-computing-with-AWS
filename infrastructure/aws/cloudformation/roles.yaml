@@ -333,10 +333,8 @@ Resources:
       ApplicationName: !Ref AWSCodedeploy
       Ec2TagFilters: 
       - 
-        Key: 
-          Ref: Name
-        Value: 
-          Ref: EC2codedeploy
+        Key: Name
+        Value: EC2codedeploy
         Type: "KEY_AND_VALUE"
 
 

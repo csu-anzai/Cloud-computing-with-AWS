@@ -23,7 +23,7 @@ Resources:
             Effect: Allow
             Action: s3:PutObject
                 
-            Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+            Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su19*]]
                
       Users: 
         - circleci 
@@ -200,7 +200,7 @@ Resources:
                   - s3:List*
                 
                 Effect: Allow
-                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su19*]]
             
     
 
@@ -294,7 +294,7 @@ Resources:
        
                 
                 Effect: Allow
-                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su19*]]
  
                   #arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me
             

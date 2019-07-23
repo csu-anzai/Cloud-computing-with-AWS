@@ -113,7 +113,7 @@ Resources:
   InstanceProfile: 
     Type: AWS::IAM::InstanceProfile
     Properties: 
-      Roles : CodeDeployEC2ServiceRole  
+      Roles : ["STACK-NAME-summercloud201-CodeDeployEC2ServiceRole-S0D2BSZF9ZER"]
 
 
          

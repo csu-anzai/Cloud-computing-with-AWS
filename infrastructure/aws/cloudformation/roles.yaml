@@ -183,8 +183,14 @@ Resources:
                   
             
             Action: 
-              -
-                sts:AssumeRole
+              
+              - sts:AssumeRole
+              
+
+            
+                    
+                
+            
 
 
 
@@ -200,9 +206,19 @@ Resources:
                 Action:
                   - s3:Get*
                   - s3:List*
+                  - ssm:GetParameter
+                  - cloudwatch:PutMetricData
+                  - ec2:DescribeTags
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                  - logs:DescribeLogGroups
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
                 
                 Effect: Allow
-                Resource: !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
+                Resource: 
+                  - !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
+                  - arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
             
   CodeDeployServiceRole:
 
@@ -281,11 +297,22 @@ Resources:
                   - elasticloadbalancing:DescribeTargetHealth
                   - elasticloadbalancing:RegisterTargets
                   - elasticloadbalancing:DeregisterTargets
+                  - cloudwatch:PutMetricData
+                  - ec2:DescribeTags
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                  - logs:DescribeLogGroups
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+            
           
        
                 
                 Effect: Allow
                 Resource: "*"
+                
+              
+                
 
       RoleName: CodedeployServiceRole
 #!Join[':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
@@ -347,66 +374,6 @@ Resources:
 
          
       ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
-
-
-
-  CloudWatchRole:
-    Type: AWS::IAM::Role
-    Properties: 
-      AssumeRolePolicyDocument: 
-        Version : 2012-10-17
-        Statement:
-          -
-            Effect: Allow
-            Principal: 
-              Service:
-                - ec2.amazonaws.com
-
-            Action: 
-              -
-                sts:AssumeRole
-        
-       
-      Policies: 
-        -
-          PolicyName: CloudWatchRole
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement: 
-              -
-          
-                Effect: "Allow"
-                Action: 
-                  
-                  - cloudwatch:PutMetricData
-                  - ec2:DescribeTags
-                  - logs:PutLogEvents
-                  - logs:DescribeLogStreams
-                  - logs:DescribeLogGroups
-                  - logs:CreateLogStream
-                  - logs:CreateLogGroup
-            
-                Resource: "*"
-              
-                Effect: Allow
-                Action: 
-                  -
-                    ssm:GetParameter
-                    
-                
-                Resource: "arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
-          
-      RoleName: CloudWatchRole
-
-
-
-            
-
-
-
-  
-      # 
-
 
 
 

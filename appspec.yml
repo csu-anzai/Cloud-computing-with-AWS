@@ -2,11 +2,18 @@ version: 0.0
 os: linux
 
 files:             
-  - source: ./webapp/build/libs/ROOT.war
-    destination: /opt/tomcat/webapps
+  - source: /webapp.zip
+    destination: /
 
 hooks:
+  BeforeInstall:
+    - location: ./beforeInstall.sh
+      runas: centos
   AfterInstall:
    - location: ./afterInstall.sh
      timeout: 180
      runas: centos
+  ApplicationStart:
+    - location: myproject/startApp.sh
+      timeout: 3600
+      runas: centos

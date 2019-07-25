@@ -1,2 +1,2 @@
-cd myroject
+cd myproject
 python3.6 Cloud_WebApp.py

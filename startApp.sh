@@ -1,1 +1,1 @@
-python3 Cloud_WebApp.py
+python3.6 Cloud_WebApp.py

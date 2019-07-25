@@ -15,6 +15,7 @@ jobs:
             cd webapp
             ls -al
             cd ..
+	    cd ..
       - run:
           name: Install awscli
           command: |
@@ -26,7 +27,7 @@ jobs:
           name: Zip Artifact
           command: |
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
-            cd webapp && zip -r ~/webapp.zip *
+            zip -r ~/webapp.zip *
             ls -l
       - run:
           name: Upload Artifact to S3

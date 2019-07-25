@@ -14,8 +14,7 @@ jobs:
           command: |
             cd webapp
             ls -al
-            cd ..
-	    cd ..
+            cd ../..	
       - run:
           name: Install awscli
           command: |

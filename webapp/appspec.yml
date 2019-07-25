@@ -3,7 +3,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/centos
+    destination: /home/centos/webapp
 hooks:
   BeforeInstall:
     - location: cdScripts/beforeInstall.sh

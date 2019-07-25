@@ -110,7 +110,10 @@ Resources:
   #     EC2SecurityGroupId: !GetAtt "WebAppSecurityGroup.GroupId"
   
 
-  
+  InstanceProfile: 
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles : ["CodeDeployEC2ServiceRole"]
 
 
          
@@ -124,6 +127,8 @@ Resources:
      
       DisableApiTermination: No
       ImageId: !Ref AMI
+      IamInstanceProfile : !Ref InstanceProfile
+
 
       SecurityGroupIds: 
         - !GetAtt "WebAppSecurityGroup.GroupId"

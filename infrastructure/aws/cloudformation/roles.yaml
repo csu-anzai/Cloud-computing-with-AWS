@@ -23,7 +23,7 @@ Resources:
             Effect: Allow
             Action: s3:PutObject
                 
-            Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+            Resource: !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
                
       Users: 
         - circleci 
@@ -47,6 +47,7 @@ Resources:
             Action:
               - codedeploy:RegisterApplicationRevision
               - codedeploy:GetApplicationRevision
+              - codedeploy:*
           
             #Resource: !Join ['', ['arn:aws:codedeploy:', !Join [':', [!Ref 'AWS::Region', !Ref 'AWS::AccountId',
                 #application,csye6225-webapp]], /*]]
@@ -165,6 +166,7 @@ Resources:
 
     Type: AWS::IAM::Role
     Properties: 
+      RoleName: CodeDeployEC2ServiceRole
       AssumeRolePolicyDocument: 
 
         Version : 2012-10-17
@@ -173,9 +175,9 @@ Resources:
             Effect: Allow
             Principal: 
               AWS:
-                - 
+                - #arn:aws:iam::!Ref 'AWS::AccountId':user/circleci
                   !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
-                  #arn:aws:iam::419412470032:user/circleci
+                 
 
                
                   
@@ -200,24 +202,14 @@ Resources:
                   - s3:List*
                 
                 Effect: Allow
-                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+                Resource: !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
             
-    
-
-    
-    
-    
-
-
-
-
-
   CodeDeployServiceRole:
 
     Type: AWS::IAM::Role
     Properties: 
       AssumeRolePolicyDocument: 
-
+      
         Version : 2012-10-17
         Statement:
           -
@@ -225,9 +217,8 @@ Resources:
             Principal: 
 
               AWS:
-                - !Join [':', ['arn:aws:iam:', !Ref 'AWS::AccountId',user/circleci]]
-                #arn:aws:iam::419412470032:user/circleci
-
+                - !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+                #arn:aws:iam::!Ref 'AWS::AccountId':user/circleci
               Service:
                 - codedeploy.us-east-1.amazonaws.com
                 
@@ -294,7 +285,12 @@ Resources:
        
                 
                 Effect: Allow
-                Resource: !Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su2019*]]
+                Resource: "*"
+
+      RoleName: CodedeployServiceRole
+#!Join[':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+
+                #!Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su19-*.*]]
  
                   #arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me
             
@@ -330,12 +326,18 @@ Resources:
      
         
     
-      ApplicationName: 
-        Ref: AWSCodedeploy
+      ApplicationName: !Ref AWSCodedeploy
+      Ec2TagFilters: 
+      - 
+        Key: Name
+        Value: EC2codedeploy
+        Type: "KEY_AND_VALUE"
 
 
       AutoRollbackConfiguration:
         Enabled: No
+      DeploymentGroupName: csye6225-webapp-deployment
+
 
 
       DeploymentStyle: 

@@ -1,1 +1,2 @@
-python3 Cloud_WebApp.py
+cd myproject
+python3.6 Cloud_WebApp.py

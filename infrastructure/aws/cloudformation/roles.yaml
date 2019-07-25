@@ -166,6 +166,7 @@ Resources:
 
     Type: AWS::IAM::Role
     Properties: 
+      RoleName: CodeDeployEC2ServiceRole
       AssumeRolePolicyDocument: 
 
         Version : 2012-10-17
@@ -208,7 +209,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties: 
       AssumeRolePolicyDocument: 
-
+      
         Version : 2012-10-17
         Statement:
           -
@@ -284,7 +285,10 @@ Resources:
        
                 
                 Effect: Allow
-                Resource: !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+                Resource: "*"
+
+      RoleName: CodedeployServiceRole
+#!Join[':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
 
                 #!Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su19-*.*]]
  

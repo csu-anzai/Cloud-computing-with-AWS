@@ -1,0 +1,19 @@
+version: 0.0
+
+os: linux
+files:
+  - source: /
+    destination: /home/centos/webapp
+hooks:
+  BeforeInstall:
+    - location: ./beforeInstall.sh
+      timeout: 600
+      runas: root
+  AfterInstall:
+    - location: ./afterInstall.sh
+      timeout: 600
+      runas: root
+  ApplicationStart:
+    - location: ./startApp.sh
+      timeout: 600
+      runas: root

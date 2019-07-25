@@ -113,10 +113,11 @@ Resources:
   InstanceProfile: 
     Type: AWS::IAM::InstanceProfile
     Properties: 
-      Roles : ["CodeDeployEC2ServiceRole", "CloudWatchRole"]
+      Roles : ["CodeDeployEC2ServiceRole"]
  
 
-
+  
+ 
          
          
 
@@ -129,7 +130,7 @@ Resources:
       DisableApiTermination: No
       ImageId: !Ref AMI
       IamInstanceProfile : !Ref InstanceProfile
-
+          
 
       SecurityGroupIds: 
         - !GetAtt "WebAppSecurityGroup.GroupId"

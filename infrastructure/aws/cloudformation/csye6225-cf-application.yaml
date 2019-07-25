@@ -113,7 +113,8 @@ Resources:
   InstanceProfile: 
     Type: AWS::IAM::InstanceProfile
     Properties: 
-      Roles : ["CodeDeployEC2ServiceRole"]
+      Roles : ["CodeDeployEC2ServiceRole", "CloudWatchRole"]
+ 
 
 
          

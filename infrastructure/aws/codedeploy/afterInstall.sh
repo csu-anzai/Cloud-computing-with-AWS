@@ -1,2 +1,2 @@
-echo $RDS_INSTANCE
+echo "anuja"
 sudo mysql -h $RDS_INSTANCE -u  $MYSQL_DATABASE_USER -p $MYSQL_DATABASE_PASSWORD < /home/centos/deploy/createScripts.sql

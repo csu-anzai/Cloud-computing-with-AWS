@@ -2,14 +2,14 @@ version: 0.0
 
 os: linux
 files:
-  - source: /
-    destination: /home/centos/webapp/webapp
+  - source: ~/
+    destination: ~/home/centos/webapp/
 hooks:
   AfterInstall:
-    - location: cdScripts/afterInstall.sh
+    - location: ~/webapp/cdScripts/afterInstall.sh
       timeout: 600
       runas: root
   ApplicationStart:
-    - location: cdScripts/startApp.sh
+    - location: ~/webapp/cdScripts/startApp.sh
       timeout: 600
       runas: root

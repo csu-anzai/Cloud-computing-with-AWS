@@ -5,6 +5,10 @@ files:
   - source: /
     destination: /home/centos/
 hooks:
+  AfterInstall:
+    - location: /webapp/cdScripts/afterInstall.sh
+      timeout: 600
+      runas: centos
   ApplicationStart:
     - location: /webapp/cdScripts/startApp.sh
       timeout: 600

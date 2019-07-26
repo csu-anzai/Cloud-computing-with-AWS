@@ -3,7 +3,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/centos/webapp/
+    destination: /home/centos/
 hooks:
   ApplicationStart:
     - location: /webapp/cdScripts/startApp.sh

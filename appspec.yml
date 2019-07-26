@@ -3,7 +3,7 @@ os: linux
 
 files:             
   - source: ~/
-    destination: /home/centos/myproject
+    destination: /home/centos/deploy
 
 hooks:
   AfterInstall:

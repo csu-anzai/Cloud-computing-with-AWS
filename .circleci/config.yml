@@ -28,7 +28,6 @@ jobs:
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
            # zip -r ~/webapp.zip *
            # ls -l
-      	    pwd
             mkdir -p codedeploy_artifact
             cp infrastructure/aws/codedeploy/*.sh .
             zip -r csye6225-web-app-${CIRCLE_BUILD_NUM}.zip *
@@ -39,7 +38,7 @@ jobs:
             cd ..
             pwd
             ls -al
-            
+
       - run:
           name: Upload Artifact to S3
           command: |

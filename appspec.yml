@@ -2,13 +2,10 @@ version: 0.0
 os: linux
 
 files:             
-  - source: /webapp.zip
-    destination: /
+  - source: /
+    destination: /home/centos/webapp
 
 hooks:
-  BeforeInstall:
-    - location: ./beforeInstall.sh
-      runas: centos
   AfterInstall:
    - location: ./afterInstall.sh
      timeout: 180

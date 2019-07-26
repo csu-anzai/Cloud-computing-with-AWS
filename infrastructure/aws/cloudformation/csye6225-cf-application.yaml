@@ -160,7 +160,7 @@ Resources:
             echo "export MYSQL_DATABASE_PASSWORD=csye6225password" >> /etc/environment
             echo "export AWS_REGION_NAME=us-east-1" >> /etc/environment
             echo "export PRODUCTION_RUN=True" >> /etc/environment
-
+            echo "export LOCAL_RUN=False" >> /etc/environment
 
           #echo "export S3_BUCKET_NAME=${s3.BucketName}" >> /etc/environment
 

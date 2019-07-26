@@ -10,7 +10,7 @@ jobs:
           name: List directory
           command: |
             cd webapp && ls
-            cd .. && ls
+            cd ../../ && ls
       - run:
           name: Install awscli
           command: |
@@ -20,7 +20,7 @@ jobs:
             aws configure set region $region
       - run:
           name: Zip Project 
-          command: zip -r ~/webapp.zip webapp 
+          command: zip -r ~/webapp.zip * 
       - run:
           name: List directory
           command: cd ~/ && ls

@@ -8,8 +8,8 @@ hooks:
   AfterInstall:
     - location: ~/webapp/cdScripts/afterInstall.sh
       timeout: 600
-      runas: root
+      runas: centos
   ApplicationStart:
     - location: ~/webapp/cdScripts/startApp.sh
       timeout: 600
-      runas: root
+      runas: centos

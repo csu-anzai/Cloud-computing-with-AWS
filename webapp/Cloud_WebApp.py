@@ -19,7 +19,7 @@ from botocore.client import Config
 import os
 
 
-local_run = os.environ['LOCAL_RUN']
+#local_run = os.environ['LOCAL_RUN']
 production_run = os.environ['PRODUCTION_RUN']
 
 

@@ -112,9 +112,11 @@ Resources:
 
   InstanceProfile: 
     Type: AWS::IAM::InstanceProfile
-    Properties: 
-      Roles : ["CodeDeployEC2ServiceRole"]
- 
+    DependsOn: CodeDeployEC2ServiceRole
+    Properties:
+      Path: "/"
+      Roles: ["CodeDeployEC2ServiceRole"]
+     
 
   
  
@@ -153,7 +155,7 @@ Resources:
             #!/bin/bash -xe
 
             echo "export RDS_INSTANCE=${RDSInstance.Endpoint.Address}" >> /etc/environment
-            echo "export S3_BUCKET_NAME=code-deploy.csye6225-su19-deogade.me" >> /etc/environment
+            
             echo "export MYSQL_DATABASE_USER=csye6225master" >> /etc/environment
             echo "export MYSQL_DATABASE_PASSWORD=csye6225password" >> /etc/environment
             echo "export AWS_REGION_NAME=us-east-1" >> /etc/environment
@@ -240,6 +242,240 @@ Resources:
       - !Ref Subnet2
 
 
+  CodeDeployEC2ServiceRole:
+
+    Type: AWS::IAM::Role
+    Properties: 
+      RoleName: CodeDeployEC2ServiceRole
+      AssumeRolePolicyDocument: 
+
+        Version : 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal: 
+              Service:
+                - ec2.amazonaws.com
+              AWS:
+                - #arn:aws:iam::!Ref 'AWS::AccountId':user/circleci
+                  !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+                 
+
+               
+                  
+            
+            Action: 
+              
+              - sts:AssumeRole
+              
+
+            
+                    
+                
+            
+
+
+
+      Policies: 
+        -
+
+          PolicyName: CodeDeployEC2ServiceRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - s3:Get*
+                  - s3:List*
+                  - ssm:GetParameter
+                  - cloudwatch:PutMetricData
+                  - ec2:DescribeTags
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                  - logs:DescribeLogGroups
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                
+                Effect: Allow
+                Resource: 
+                  - !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
+                  - arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+            
+  CodeDeployServiceRole:
+
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+      
+        Version : 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal: 
+
+
+              AWS:
+                - !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+                #arn:aws:iam::!Ref 'AWS::AccountId':user/circleci
+              Service:
+                - codedeploy.us-east-1.amazonaws.com
+                
+
+               
+                  
+            
+            Action: 
+              -
+                sts:AssumeRole
+
+
+
+      Policies: 
+        -
+
+          PolicyName: AWSCodeDeployRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - autoscaling:CompleteLifecycleAction
+                  - autoscaling:DeleteLifecycleHook
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribeLifecycleHooks
+                  - autoscaling:PutLifecycleHook
+                  - autoscaling:RecordLifecycleActionHeartbeat
+                  - autoscaling:CreateAutoScalingGroups
+                  - autoscaling:UpdateAutoScalingGroup
+                  - autoscaling:EnableMetricsCollection
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribePolicies
+                  - autoscaling:DescribeScheduledActions
+                  - autoscaling:DescribeNotificationConfigurations
+                  - autoscaling:DescribeLifecycleHooks
+                  - autoscaling:SuspendProcesses
+                  - autoscaling:ResumeProcesses
+                  - autoscaling:AttachLoadBalancers
+                  - autoscaling:PutScalingPolicy
+                  - autoscaling:PutScheduledUpdateGroupAction
+                  - autoscaling:PutNotificationConfiguration
+                  - autoscaling:PutLifecycleHook
+                  - autoscaling:DescribeScalingActivities
+                  - autoscaling:DeleteAutoScalingGroup
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:TerminateInstances
+                  - tag:GetTags
+                  - tag:GetResources
+                  - sns:Publish
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:PutMetricAlarm
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeInstanceHealth
+                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeTargetHealth
+                  - elasticloadbalancing:RegisterTargets
+                  - elasticloadbalancing:DeregisterTargets
+                  - cloudwatch:PutMetricData
+                  - ec2:DescribeTags
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                  - logs:DescribeLogGroups
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+            
+          
+       
+                
+                Effect: Allow
+                Resource: "*"
+                
+              
+                
+
+      RoleName: CodedeployServiceRole
+#!Join[':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
+
+                #!Join ['', ['arn:aws:s3:::', code-deploy.csye6225-su19-*.*]]
+ 
+                  #arn:aws:s3:::code-deploy.csye6225-su19-patilsup.me
+            
+    #!Join [':', ['arn:aws:s3::',code-deploy!Ref 'AWS::AccountId',user/circelci]]
+
+    
+    
+    
+    
+
+
+
+
+
+ 
+  AWSCodedeploy:
+    Type: AWS::CodeDeploy::Application
+    Properties: 
+      ApplicationName: csye6225-webapp
+      ComputePlatform: Server
+
+
+
+  AWScodedeploygroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    DependsOn: CodeDeployServiceRole
+   
+    
+     
+        
+    Properties:
+
+     
+        
+    
+      ApplicationName: !Ref AWSCodedeploy
+      Ec2TagFilters: 
+      - 
+        Key: Name
+        Value: EC2codedeploy
+        Type: "KEY_AND_VALUE"
+
+
+      AutoRollbackConfiguration:
+        Enabled: No
+      DeploymentGroupName: csye6225-webapp-deployment
+
+
+
+      DeploymentStyle: 
+        DeploymentType: IN_PLACE
+        DeploymentOption: WITHOUT_TRAFFIC_CONTROL
+
+
+         
+      ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+   
+  
+
+
+
 
 
 
@@ -264,6 +500,7 @@ Resources:
 
 
   
+
 
 
 

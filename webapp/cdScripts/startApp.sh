@@ -1,1 +1,1 @@
-python3.6 /home/centos/webapp/cdScripts/Cloud_WebApp.py
+python3.6 /home/centos/webapp/Cloud_WebApp.py

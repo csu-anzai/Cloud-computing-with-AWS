@@ -22,7 +22,7 @@ jobs:
           command: cd ~/ && ls
       - run:
           name: Send WebApp to S3
-          command: aws s3 cp ~/webapp.zip s3://$S3_BUCKET
+          command: aws s3 cp ~/webapp.zip s3://$s3_bucket_name
       - run: 
           name: Deploy to AWS EC2
           command: aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$S3_BUCKET,bundleType=zip,key=webapp.zip 

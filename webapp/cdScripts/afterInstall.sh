@@ -1,1 +1,1 @@
-mysql -h$RDS_INSTANCE -u$MYSQL_DATABASE_USER -p$MYSQL_DATABASE_PASSWORD < /opt/codedeploy-agent/deployment-root/99aeeba9-a050-42a9-a74b-47e801263c3c/d-DVZIEX6UN/deployment-archive/webapp/cdScripts/createScripts.sql
+mysql -h$RDS_INSTANCE -u$MYSQL_DATABASE_USER -p$MYSQL_DATABASE_PASSWORD < createScripts.sql

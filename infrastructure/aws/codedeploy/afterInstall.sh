@@ -1,1 +1,1 @@
-sudo mysql -h $RDS_INSTANCE -P 3306 -u  $MYSQL_DATABASE_USER -p $MYSQL_DATABASE_PASSWORD < /infrastructure/aws/codedeploy/createScripts.sql
+sudo mysql -h $RDS_INSTANCE -P 3306 -u  $MYSQL_DATABASE_USER -p $MYSQL_DATABASE_PASSWORD < createScripts.sql

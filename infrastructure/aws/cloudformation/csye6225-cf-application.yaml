@@ -153,7 +153,7 @@ Resources:
             #!/bin/bash -xe
 
             echo "export RDS_INSTANCE=${RDSInstance.Endpoint.Address}" >> /etc/environment
-            
+            echo "export S3_BUCKET_NAME=code-deploy.csye6225-su19-deogade.me" >> /etc/environment
             echo "export MYSQL_DATABASE_USER=csye6225master" >> /etc/environment
             echo "export MYSQL_DATABASE_PASSWORD=csye6225password" >> /etc/environment
             echo "export AWS_REGION_NAME=us-east-1" >> /etc/environment

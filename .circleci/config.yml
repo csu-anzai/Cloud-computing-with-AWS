@@ -16,7 +16,7 @@ jobs:
           command: sudo pip install awscli
       - run:
           name: Zip Project 
-          command: zip -r ~/webapp.zip * 
+          command: zip -r ~/webapp.zip webapp 
       - run:
           name: List directory
           command: cd ~/ && ls

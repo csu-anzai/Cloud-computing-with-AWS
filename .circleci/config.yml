@@ -28,8 +28,8 @@ jobs:
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             mkdir -p codedeploy_artifact
             cp infrastructure/aws/codedeploy/*.sh .
-            zip -r webapp.zip *
-            mv webapp.zip codedeploy_artifact/
+            zip -r csye6225-web-app-${CIRCLE_BUILD_NUM}.zip *
+            mv csye6225-web-app-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/
             cd codedeploy_artifact
             ls -al
             pwd
@@ -41,12 +41,12 @@ jobs:
           name: Upload Artifact to S3
           command: |
             echo "Hello"
-            aws s3 cp ~/webapp.zip s3://$s3_bucket_name
+            aws s3 sync codedeploy_artifact s3://$s3_bucket_name
             echo "Uploaded to s3"
       - run:
           name: Make CodeDeploy API call
           command: |
-            aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$s3_bucket_name,bundleType=zip,key=webapp.zip  
+            aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$s3_bucket_name,bundleType=zip,key=csye6225-web-app-${CIRCLE_BUILD_NUM}.zip  
 
 
 

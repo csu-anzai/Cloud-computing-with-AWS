@@ -112,11 +112,11 @@ Resources:
 
   InstanceProfile: 
     Type: AWS::IAM::InstanceProfile
+    DependsOn: CodeDeployEC2ServiceRole
     Properties:
       Path: "/"
-      Roles: !Ref CodeDeployEC2ServiceRole
-      DependsOn: 
-        - CodeDeployEC2ServiceRole
+      Roles: ["CodeDeployEC2ServiceRole"]
+     
 
   
  
@@ -254,6 +254,8 @@ Resources:
           -
             Effect: Allow
             Principal: 
+              Service:
+                - ec2.amazonaws.com
               AWS:
                 - #arn:aws:iam::!Ref 'AWS::AccountId':user/circleci
                   !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
@@ -311,6 +313,7 @@ Resources:
           -
             Effect: Allow
             Principal: 
+
 
               AWS:
                 - !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]

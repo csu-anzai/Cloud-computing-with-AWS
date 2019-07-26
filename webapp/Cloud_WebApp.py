@@ -70,7 +70,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 """ Create secret key for UUID in database """
 app.config['SECRET_KEY'] = 'my_key'
-        
+       
+
+def create_database():
+    conn = db.connect()
+    cur = conn.cursor()
+    cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
+    
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
@@ -1170,6 +1176,7 @@ def shutdown():
 if __name__ == '__main__':
     
     """ RUN FLASK APP """
+    create_database()
     app.run(host='0.0.0.0')
 
 

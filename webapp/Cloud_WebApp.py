@@ -24,7 +24,7 @@ import os
 
 
 
-print("Production run value", production_run)
+#print("Production run value", production_run)
 policy = PasswordPolicy.from_names(
     length=8,
     uppercase=0,  # need min. 0 uppercase letters

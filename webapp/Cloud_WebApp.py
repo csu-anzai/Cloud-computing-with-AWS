@@ -17,6 +17,14 @@ import re
 import boto3
 from botocore.client import Config
 import os
+import mysql.connector
+
+try:
+    connection = mysql.connector.connect(host=os.environ.get('RDS_INSTANCE'), user = 'csye6225master', password = 'csye6225password')
+    if connection.is_connected():
+        print("inside db $$$$$", connection.get_server_info)
+except Error as e:
+    print("Error", e)
 
 
 #local_run = os.environ['LOCAL_RUN']
@@ -75,9 +83,10 @@ app.config['SECRET_KEY'] = 'my_key'
 
 def create_database():
     print("db", db)
-    conn = db.connect()
-    print("connect", conn)
-    cur = conn.cursor()
+    # conn = connection.connect()
+
+    # print("connect", conn)
+    cur = connection.cursor()
     print("cursor", cur)
     cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
 

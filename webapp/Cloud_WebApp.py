@@ -49,7 +49,7 @@ aws_s3_bucket_name = os.environ.get('S3_BUCKET_NAME')
 app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
 app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
 app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-app.config['MYSQL_DATABASE_HOST'] = os.environ['RDS_INSTANCE']
+app.config['MYSQL_DATABASE_HOST'] = os.environ.get('RDS_INSTANCE')
 
 # elif(local_run):
 # 	app.config['MYSQL_DATABASE_USER'] = "root"

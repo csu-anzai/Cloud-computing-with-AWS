@@ -32,7 +32,7 @@ echo "subnet2 $6"
 
 #vpcid=$(aws ec2 describe-vpcs --query 'Vpcs[?Tags[?Key=='Name']|[?Value=='cloudsu2019']].VpcId')
 
-stack_create=$(aws cloudformation create-stack --template-body file://csye6225-cf-application.yaml --stack-name $4 --parameters ParameterKey=AMI,ParameterValue=$1 ParameterKey=VPC,ParameterValue=$2 ParameterKey=AWSKEY,ParameterValue=$3 ParameterKey=Subnet1,ParameterValue=$5 ParameterKey=Subnet2,ParameterValue=$6)
+stack_create=$(aws cloudformation create-stack --template-body file://csye6225-cf-application.yaml --stack-name $4 --capabilities CAPABILITY_NAMED_IAM --parameters ParameterKey=AMI,ParameterValue=$1 ParameterKey=VPC,ParameterValue=$2 ParameterKey=AWSKEY,ParameterValue=$3 ParameterKey=Subnet1,ParameterValue=$5 ParameterKey=Subnet2,ParameterValue=$6)
 
 
 

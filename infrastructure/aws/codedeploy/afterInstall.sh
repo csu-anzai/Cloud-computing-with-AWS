@@ -1,12 +1,6 @@
-#!/bin/bash
+echo "anuja"
+echo $PATH
+echo $RDS_INSTANCE
 
-sudo systemctl stop tomcat.service
 
-sudo rm -rf /opt/tomcat/webapps/docs  /opt/tomcat/webapps/examples /opt/tomcat/webapps/host-manager  /opt/tomcat/webapps/manager /opt/tomcat/webapps/ROOT
-
-sudo chown tomcat:tomcat /opt/tomcat/webapps/ROOT.war
-
-# cleanup log files
-sudo rm -rf /opt/tomcat/logs/catalina*
-sudo rm -rf /opt/tomcat/logs/*.log
-sudo rm -rf /opt/tomcat/logs/*.txt
+sudo mysql -h $RDS_INSTANCE -u  $MYSQL_DATABASE_USER -p $MYSQL_DATABASE_PASSWORD -P 3306 < /home/centos/deploy/createScripts.sql

@@ -74,6 +74,7 @@ app.config['SECRET_KEY'] = 'my_key'
        
 
 def create_database():
+    print("db", db)
     conn = db.connect()
     cur = conn.cursor()
     cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")

@@ -76,11 +76,14 @@ app.config['SECRET_KEY'] = 'my_key'
 def create_database():
     print("db", db)
     conn = db.connect()
+    print("connect", conn)
     cur = conn.cursor()
+    print("cursor", cur)
     cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
+
     cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, PRIMARY KEY ( id ))")
     cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
-    
+    print("Tabkes created")    
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):

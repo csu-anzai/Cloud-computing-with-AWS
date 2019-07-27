@@ -3,7 +3,7 @@
 #echo"enter the stack name"
 #read -p stackname
 
-stack_create=$(aws cloudformation create-stack --template-body file://roles.yaml --stack-name roles --capabilities CAPABILITY_NAMED_IAM  )
+stack_create=$(aws cloudformation create-stack --template-body file://roles.yaml --stack-name roles --capabilities CAPABILITY_NAMED_IAM)
 echo "Stack is getting created...."
 result=$(aws cloudformation wait stack-create-complete --stack-name roles)
 if [[ -z "result" ]]; then

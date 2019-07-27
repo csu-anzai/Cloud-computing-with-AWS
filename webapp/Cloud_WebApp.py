@@ -21,8 +21,9 @@ import os
 
 #local_run = os.environ['LOCAL_RUN']
 aws_region = os.getenv("AWS_REGION_NAME")
-production_run = os.environ['PRODUCTION_RUN']
-
+print(aws_region)
+production_run = os.getenv['PRODUCTION_RUN']
+print(production_run)
 
 
 #print("Production run value", production_run)

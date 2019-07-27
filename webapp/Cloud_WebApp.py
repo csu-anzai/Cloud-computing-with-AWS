@@ -19,8 +19,8 @@ from botocore.client import Config
 import os
 
 
-local_run = os.environ['LOCAL_RUN']
-production_run = os.environ['PRODUCTION_RUN']
+#local_run = os.environ['LOCAL_RUN']
+#production_run = os.environ['PRODUCTION_RUN']
 
 
 
@@ -41,14 +41,14 @@ salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 app = Flask("__name__")
 
 
-if(production_run):
-    print("In production_run")
-    print(production_run)
-    aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
-    app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
-    app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
-    app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-    app.config['MYSQL_DATABASE_HOST'] = os.environ['RDS_INSTANCE']
+#if(production_run):
+# print("In production_run")
+# print(production_run)
+aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
+app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
+app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+app.config['MYSQL_DATABASE_HOST'] = os.environ['RDS_INSTANCE']
 
 # elif(local_run):
 # 	app.config['MYSQL_DATABASE_USER'] = "root"

@@ -1,20 +1,16 @@
 version: 2
 jobs:
   build:
-    branches:
-      only:
-        - assignment6
-        
+    working_directory: ~/webapp
     docker:
       - image: circleci/python:3.6-jessie
     steps:
       - checkout
       - run:
-          name: Build Artifact
+          name: List directory
           command: |
-            cd webapp
-            ls -al
-            cd ..
+            cd webapp && ls
+            cd ../../ && ls
       - run:
           name: Install awscli
           command: |
@@ -23,23 +19,23 @@ jobs:
             aws configure set aws_secret_access_key $aws_secret_access_key
             aws configure set region $region
       - run:
-          name: Zip Artifact
-          command: |
-            echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
-            cd webapp && zip -r ~/webapp.zip *
-            ls -l
+          name: Zip Project 
+          command: zip -r ~/webapp.zip * 
       - run:
-          name: Upload Artifact to S3
-          command: |
-            echo "Hello"
-            aws s3 cp ~/webapp.zip s3://$s3_bucket_name
-            echo "Uploaded to s3"
+          name: List directory
+          command: cd ~/ && ls
       - run:
-          name: Make CodeDeploy API call
-          command: |
-            aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$s3_bucket_name,bundleType=zip,key=webapp.zip  
-
-
-
-
-#aa
+          name: Send WebApp to S3
+          command: aws s3 cp ~/webapp.zip s3://$s3_bucket_name
+      - run: 
+          name: Deploy to AWS EC2
+          command: aws configure set region us-east-1 && aws deploy create-deployment --application-name csye6225-webapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name csye6225-webapp-deployment --description "My demo deployment" --s3-location bucket=$s3_bucket_name,bundleType=zip,key=webapp.zip 
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build:
+          filters:
+              branches:
+                only: 
+                  - assignment6

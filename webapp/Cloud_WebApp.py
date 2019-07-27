@@ -19,12 +19,12 @@ from botocore.client import Config
 import os
 
 
-local_run = os.environ['LOCAL_RUN']
-production_run = os.environ['PRODUCTION_RUN']
+#local_run = os.environ['LOCAL_RUN']
+#production_run = os.environ['PRODUCTION_RUN']
 
 
 
-print("Production run value", production_run)
+# print("Production run value", production_run)
 policy = PasswordPolicy.from_names(
     length=8,
     uppercase=0,  # need min. 0 uppercase letters
@@ -41,14 +41,14 @@ salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 app = Flask("__name__")
 
 
-if(production_run):
-    print("In production_run")
-    print(production_run)
-    aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
-    app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
-    app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
-    app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-    app.config['MYSQL_DATABASE_HOST'] = os.environ['RDS_INSTANCE']
+# if(production_run):
+print("In production_run", os.environ["PATH"])
+# print(production_run)
+aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
+app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
+app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+app.config['MYSQL_DATABASE_HOST'] = os.environ['RDS_INSTANCE']
 
 # elif(local_run):
 # 	app.config['MYSQL_DATABASE_USER'] = "root"
@@ -70,7 +70,15 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 """ Create secret key for UUID in database """
 app.config['SECRET_KEY'] = 'my_key'
-        
+       
+
+def create_database():
+    conn = db.connect()
+    cur = conn.cursor()
+    cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
+    cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, PRIMARY KEY ( id ))")
+    cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
+    
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
@@ -1170,6 +1178,7 @@ def shutdown():
 if __name__ == '__main__':
     
     """ RUN FLASK APP """
+    create_database()
     app.run(host='0.0.0.0')
 
 

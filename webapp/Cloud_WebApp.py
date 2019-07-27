@@ -18,11 +18,14 @@ import boto3
 from botocore.client import Config
 import os
 import mysql.connector
+from mysql.connector import Error
 
+rds = os.environ.get('RDS_INSTANCE')
+print("RDS", rds)
 try:
-    connection = mysql.connector.connect(host=os.environ.get('RDS_INSTANCE'), user = 'csye6225master', password = 'csye6225password')
+    connection = mysql.connector.connect(host=rds, user = 'csye6225master', password = 'csye6225password')
     if connection.is_connected():
-        print("inside db $$$$$", connection.get_server_info)
+        print("inside db $$$$$", connection.get_server_info())
 except Error as e:
     print("Error", e)
 

@@ -5,7 +5,7 @@ files:
   - source: /
     destination: /home/centos/deploy
 hooks:
-  ApplicationStart:
+  AfterInstall:
     - location: infrastructure/aws/codedeploy/afterInstall.sh
       timeout: 3600
       runas: centos

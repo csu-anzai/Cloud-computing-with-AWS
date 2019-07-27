@@ -3,7 +3,7 @@ jobs:
   build:
     branches:
       only:
-        - assignment6-test
+        - assn-what
         
     docker:
       - image: circleci/python:3.6-jessie

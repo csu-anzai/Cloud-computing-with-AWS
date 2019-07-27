@@ -44,6 +44,7 @@ app = Flask("__name__")
 # if(production_run):
 print("In production_run", os.environ["PATH"])
 # print(production_run)
+print("Hello")
 aws_s3_bucket_name = os.environ.get('S3_BUCKET_NAME')
 app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
 app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'

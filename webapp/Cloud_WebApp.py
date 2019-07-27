@@ -20,7 +20,8 @@ import os
 
 
 #local_run = os.environ['LOCAL_RUN']
-#production_run = os.environ['PRODUCTION_RUN']
+aws_region = os.environ.get("AWS_REGION_NAME")
+production_run = os.environ['PRODUCTION_RUN']
 
 
 
@@ -43,7 +44,7 @@ app = Flask("__name__")
 
 #if(production_run):
 # print("In production_run")
-# print(production_run)
+print(production_run)
 aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
 app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
 app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'

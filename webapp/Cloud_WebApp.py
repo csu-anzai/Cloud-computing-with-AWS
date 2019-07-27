@@ -20,7 +20,7 @@ import os
 import mysql.connector
 from mysql.connector import Error
 
-rds = os.environ.get('RDS_INSTANCE')
+rds = os.environ['RDS_INSTANCE']
 print("RDS", rds)
 try:
     connection = mysql.connector.connect(host=rds, user = 'csye6225master', password = 'csye6225password')

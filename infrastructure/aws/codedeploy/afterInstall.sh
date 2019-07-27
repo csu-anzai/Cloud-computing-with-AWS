@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 echo "anuja"
 echo $PATH
 echo ${RDS_INSTANCE}

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from flask import (Flask,
     request,
     jsonify, url_for)

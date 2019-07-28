@@ -151,41 +151,41 @@ Resources:
         Key: "Name"
         Value: "EC2codedeploy"
       UserData: 
-        Fn::Base64: !Sub |
-            #!/bin/bash -xe
+        Fn::Base64:
 
-            echo "export RDS_INSTANCE=${RDSInstance.Endpoint.Address}" >> /etc/environment
-            
-            echo "export MYSQL_DATABASE_USER=csye6225master" >> /etc/environment
-            echo "export MYSQL_DATABASE_PASSWORD=csye6225password" >> /etc/environment
-            echo "export AWS_REGION_NAME=us-east-1" >> /etc/environment
-            echo "export PRODUCTION_RUN=True" >> /etc/environment
-            echo "export LOCAL_RUN=False" >> /etc/environment
+          Fn::Join:
 
-          #echo "export S3_BUCKET_NAME=${s3.BucketName}" >> /etc/environment
+            - "\n"
 
+            - [ "#!/bin/bash -xe",
 
+                "sudo bash",
 
+                "cd /home/centos",
 
-            
+                "cat > my.cnf << EOF",
 
+                "[Config]",
 
+                !Join ["",["RDS_INSTANCE=",${RDSInstance.Endpoint.Address}]],
 
-          #echo "export DB_CONNECTION=${RDSInstance.Endpoint.Address}" >> $HOME/.bashrc
+                "MYSQL_DATABASE_USER=csye6225master",
 
+                "MYSQL_DATABASE_PASSWORD=csye6225password",
 
-           # export S3_BUCKET_NAME=csye6225-su19-thawalia.me.csye6225.com
-           # export AWS_REGION=us-east-1
+                "AWS_REGION_NAME=us-east-1",
 
-        
-        
+                "PRODUCTION_RUN=True",
 
+                "LOCAL_RUN=False",
 
-      
+                "Enter S3 bucket name: ",
 
+                "read $S3_BUCKET_NAME",
 
-     
-
+                "EOF",
+              ]
+           
 
   DyanamoDBTable:
     Type: AWS::DynamoDB::Table

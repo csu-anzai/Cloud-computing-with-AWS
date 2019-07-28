@@ -93,7 +93,7 @@ dbPass = config["Config"]['MYSQL_DATABASE_PASSWORD']
 rdsInstance = "-h"+rds
 dataUser = "-u"+dbUser
 dataPass = "-p"+dbPass
-call(["mysql", rdsInstance , dataUser, dataPass, "<", createScripts.sql])
+call(["mysql", rdsInstance , dataUser, dataPass, "<", "createScripts.sql"])
 print("Database created")
 
 """ Connect to RDS instance """

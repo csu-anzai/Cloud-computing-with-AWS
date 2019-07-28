@@ -9,3 +9,7 @@ hooks:
     - location: infrastructure/aws/codedeploy/startApp.sh
       timeout: 3600
       runas: centos
+  ApplicationStop:
+   - location: infrastructure/aws/codedeploy/stopApp.sh
+     timeout: 3600
+     runas: centos

@@ -23,6 +23,8 @@ import configparser
 import logging.config
 import mysql.connector
 from mysql.connector import Error
+import subprocess
+from subprocess import call
 
 
 config = configparser.ConfigParser()
@@ -85,8 +87,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'my_key'
 rds = config["Config"]['RDS_INSTANCE']    
 dbUser = config["Config"]['MYSQL_DATABASE_USER']    
-dbPass = config["Config"]['MYSQL_DATABASE_PASSWORD']    
-os.system("mysql -hrds -udbUser -pdbPass < createScripts.sql")
+dbPass = config["Config"]['MYSQL_DATABASE_PASSWORD'] 
+
+""" CREATE DB TABLES """   
+rdsInstance = "-h"+rds
+dataUser = "-u"+dbUser
+dataPass = "-p"+dbPass
+call(["mysql", rdsInstance , dataUser, dataPass, "<", createScripts.sql])
 print("Database created")
 
 """ Connect to RDS instance """

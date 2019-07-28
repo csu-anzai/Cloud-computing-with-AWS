@@ -101,7 +101,10 @@ print("Database created")
 
 print("RDS", rds)
 try:
-    connection = mysql.connector.connect(host=rds, user = 'csye6225master', password = 'csye6225password')
+    connection = mysql.connector.connect(host=rds,
+        user = 'csye6225master',
+        password = 'csye6225password',
+        database = 'csye6225')
     if connection.is_connected():
         print("inside db $$$$$", connection.get_server_info())
 except Error as e:
@@ -118,7 +121,7 @@ def create_database():
     cur = connection.cursor()
     print("cursor", cur)
     cur.execute("show databases")
-    cur.execute("use csye6225")
+    # cur.execute("use csye6225")
     cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
 
     cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, PRIMARY KEY ( id ))")

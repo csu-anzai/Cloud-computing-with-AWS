@@ -29,13 +29,3 @@ CREATE TABLE Person(
   password varchar(100) DEFAULT NULL,
   PRIMARY KEY ( id )
 );
-
-
--- export S3_BUCKET_NAME='csye6225-su19-deogade.me.csye6225.com'
--- export AWS_REGION=us-east-1
--- export AWS_ACCESS_KEY=AKIAIOAEKCN6QRQPVCRQ
--- export AWS_SECRET_ACCESS_KEY_ID=QhnXz0gRTzg9mccWhhidsETE9o1MyAZplJ2hf30H
--- export RDS_INSTANCE=csye6225-su19.cvlubyfgvkxw.us-east-1.rds.amazonaws.com
-
-
-

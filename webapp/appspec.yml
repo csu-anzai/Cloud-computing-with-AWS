@@ -4,6 +4,7 @@ os: linux
 files:             
   - source: /
     destination: /home/centos/deploy
+
 hooks:
   ApplicationStart:
     - location: infrastructure/aws/codedeploy/startApp.sh

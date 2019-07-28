@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from flask import (Flask,
     request,
     jsonify, url_for)
@@ -17,11 +19,21 @@ import re
 import boto3
 from botocore.client import Config
 import os
+import configparser
+import logging.config
+
+
+
+config = configparser.ConfigParser()
+pathToConfig = "/home/centos/my.cnf"
+config.read(pathToConfig)
 
 
 #local_run = os.environ['LOCAL_RUN']
-#production_run = os.environ['PRODUCTION_RUN']
-
+aws_region = config["Config"]["AWS_REGION_NAME"]
+print(aws_region)
+production_run = config["Config"]['PRODUCTION_RUN']
+print(production_run)
 
 
 #print("Production run value", production_run)
@@ -43,12 +55,12 @@ app = Flask("__name__")
 
 #if(production_run):
 # print("In production_run")
-# print(production_run)
-aws_s3_bucket_name = os.environ['S3_BUCKET_NAME']
+print(production_run)
+aws_s3_bucket_name = config["Config"]['S3_BUCKET_NAME']
 app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
 app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
 app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-app.config['MYSQL_DATABASE_HOST'] = os.environ['RDS_INSTANCE']
+app.config['MYSQL_DATABASE_HOST'] = config["Config"]['RDS_INSTANCE']
 
 # elif(local_run):
 # 	app.config['MYSQL_DATABASE_USER'] = "root"
@@ -71,6 +83,35 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 """ Create secret key for UUID in database """
 app.config['SECRET_KEY'] = 'my_key'
         
+
+""" Connect to RDS instance """
+
+rds = config["Config"]['RDS_INSTANCE']
+print("RDS", rds)
+try:
+    connection = mysql.connector.connect(host=rds, user = 'csye6225master', password = 'csye6225password')
+    if connection.is_connected():
+        print("inside db $$$$$", connection.get_server_info())
+except Error as e:
+    print("Error", e)
+
+
+
+""" Create tables in Database """
+def create_database():
+    print("db", db)
+    # conn = connection.connect()
+
+    # print("connect", conn)
+    cur = connection.cursor()
+    print("cursor", cur)
+    cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
+
+    cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, PRIMARY KEY ( id ))")
+    cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
+    print("Tabkes created")
+
+
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):

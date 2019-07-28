@@ -3,7 +3,7 @@ jobs:
   build:
     branches:
       only:
-        - assignment7
+        - trial
         
     docker:
       - image: circleci/python:3.6-jessie

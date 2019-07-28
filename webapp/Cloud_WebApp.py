@@ -21,7 +21,8 @@ from botocore.client import Config
 import os
 import configparser
 import logging.config
-
+import mysql.connector
+from mysql.connector import Error
 
 
 config = configparser.ConfigParser()

@@ -104,7 +104,8 @@ try:
     connection = mysql.connector.connect(host=rds,
         user = 'csye6225master',
         password = 'csye6225password',
-        database = 'csye6225')
+        database = 'csye6225',
+        buffered=True)
     if connection.is_connected():
         print("inside db $$$$$", connection.get_server_info())
 except Error as e:

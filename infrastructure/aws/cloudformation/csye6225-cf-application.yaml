@@ -150,13 +150,10 @@ Resources:
       - 
         Key: "Name"
         Value: "EC2codedeploy"
-      UserData: 
+      UserData:
         Fn::Base64:
-
           Fn::Join:
-
             - "\n"
-
             - [ "#!/bin/bash -xe",
 
                 "sudo bash",
@@ -167,7 +164,7 @@ Resources:
 
                 "[Config]",
 
-                !Join ["",["RDS_INSTANCE=",${RDSInstance.Endpoint.Address}]],
+                !Join ["",["RDS_INSTANCE=",!GetAtt RDSInstance.Endpoint.Address]],
 
                 "MYSQL_DATABASE_USER=csye6225master",
 

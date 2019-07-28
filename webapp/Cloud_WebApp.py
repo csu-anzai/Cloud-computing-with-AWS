@@ -56,7 +56,7 @@ app = Flask("__name__")
 #if(production_run):
 # print("In production_run")
 print(production_run)
-#aws_s3_bucket_name = config["Config"]['S3_BUCKET_NAME']
+aws_s3_bucket_name = config["Config"]['S3_BUCKET_NAME']
 app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
 app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
 app.config['MYSQL_DATABASE_DB'] = 'csye6225'

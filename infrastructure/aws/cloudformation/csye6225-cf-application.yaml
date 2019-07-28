@@ -210,7 +210,7 @@ Resources:
     Properties:
       AllocatedStorage: 100
 
-      DBInstanceClass: db.m5.large
+      DBInstanceClass: db.t2.medium
       DBName: "csye6225"
       Engine: MySQL 
       MasterUserPassword: "csye6225password"

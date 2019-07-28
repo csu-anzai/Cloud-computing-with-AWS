@@ -3,7 +3,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
 
   BUCKNAME:
-    Type: AWS::S3::Bucket
+    Type: String
     Description: Bucket to send Images to
 
   AMI:

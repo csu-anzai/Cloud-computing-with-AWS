@@ -2,6 +2,10 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
 
+  BUCKNAME:
+    Type: AWS::S3::Bucket
+    Description: Bucket to send Images to
+
   AMI:
 
     Type: 'AWS::EC2::Image::Id'
@@ -176,9 +180,7 @@ Resources:
 
                 "LOCAL_RUN=False",
 
-                "Enter S3 bucket name: ",
-
-                "read $S3_BUCKET_NAME",
+                !Join ["",["S3_BUCKET_NAME=",!Ref BUCKNAME]],
 
                 "EOF",
               ]

@@ -142,8 +142,8 @@ def upload_on_s3( filename ):
 
     s3 = boto3.client(
         "s3",
-        aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
-        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+        aws_access_key_id = config["Config"]['AWS_ACCESS_KEY'],
+        aws_secret_access_key = config["Config"]['AWS_SECRET_ACCESS_KEY_ID']
     )   
     bucket_resource = s3
 
@@ -165,8 +165,8 @@ def delete_image_from_s3( filename ):
 
     s3 = boto3.client(
         "s3",
-        aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
-        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+        aws_access_key_id = config["Config"]['AWS_ACCESS_KEY'],
+        aws_secret_access_key = config["Config"]['AWS_SECRET_ACCESS_KEY_ID'],
     )
     bucket_resource = s3
     print("bucket_resource", bucket_resource)
@@ -191,8 +191,8 @@ def presignedUrl( filename ):
     filename = filename
     print("filename : ", filename)
     s3_client = boto3.client('s3',
-    aws_access_key_id = os.environ['AWS_ACCESS_KEY'],
-        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY_ID'],
+    aws_access_key_id = config["Config"]['AWS_ACCESS_KEY'],
+        aws_secret_access_key = config["Config"]['AWS_SECRET_ACCESS_KEY_ID'],
          config=Config(signature_version='s3v4'))
     print("s3 client: ", s3_client)
     try:

@@ -260,22 +260,10 @@ Resources:
               AWS:
                 - #arn:aws:iam::!Ref 'AWS::AccountId':user/circleci
                   !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
-                 
 
-               
-                  
-            
             Action: 
               
               - sts:AssumeRole
-              
-
-            
-                    
-                
-            
-
-
 
       Policies: 
         -
@@ -301,6 +289,21 @@ Resources:
                 Effect: Allow
                 Resource: 
                   - !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
+                  - arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+
+          PolicyName: AttachmentEC2S3
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - s3:Put*
+                  - s3:Delete*
+                
+                Effect: Allow
+                Resource: 
+                  - !Join ['', ['arn:aws:s3:::',csye6225-su19-*.*.*.*]]
                   - arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
             
   CodeDeployServiceRole:

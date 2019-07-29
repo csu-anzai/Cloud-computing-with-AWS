@@ -25,7 +25,7 @@ import mysql.connector
 from mysql.connector import Error
 import subprocess
 from subprocess import call
-
+import json
 
 config = configparser.ConfigParser()
 pathToConfig = "/home/centos/my.cnf"
@@ -38,6 +38,14 @@ print(aws_region)
 production_run = config["Config"]['PRODUCTION_RUN']
 print(production_run)
 
+
+""" Obtain aws credentials """
+
+with open("/home/centos/CodeDeployEC2ServiceRole") as jsonFile:
+    awsData = json.loads(jsonFile)
+
+AWS_ACCESS_KEY = awsData['AccessKeyId']
+AWS_SECRET_ACCESS_KEY_ID = awsData['SecretAccessKey']
 
 #print("Production run value", production_run)
 policy = PasswordPolicy.from_names(
@@ -142,8 +150,8 @@ def upload_on_s3( filename ):
 
     s3 = boto3.client(
         "s3",
-        aws_access_key_id = config["Config"]['AWS_ACCESS_KEY'],
-        aws_secret_access_key = config["Config"]['AWS_SECRET_ACCESS_KEY_ID']
+        aws_access_key_id = AWS_ACCESS_KEY,
+        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_ID
     )   
     bucket_resource = s3
 
@@ -165,8 +173,8 @@ def delete_image_from_s3( filename ):
 
     s3 = boto3.client(
         "s3",
-        aws_access_key_id = config["Config"]['AWS_ACCESS_KEY'],
-        aws_secret_access_key = config["Config"]['AWS_SECRET_ACCESS_KEY_ID'],
+        aws_access_key_id = AWS_ACCESS_KEY,
+        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_ID
     )
     bucket_resource = s3
     print("bucket_resource", bucket_resource)
@@ -191,8 +199,8 @@ def presignedUrl( filename ):
     filename = filename
     print("filename : ", filename)
     s3_client = boto3.client('s3',
-    aws_access_key_id = config["Config"]['AWS_ACCESS_KEY'],
-        aws_secret_access_key = config["Config"]['AWS_SECRET_ACCESS_KEY_ID'],
+    aws_access_key_id = AWS_ACCESS_KEY
+        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_ID,
          config=Config(signature_version='s3v4'))
     print("s3 client: ", s3_client)
     try:

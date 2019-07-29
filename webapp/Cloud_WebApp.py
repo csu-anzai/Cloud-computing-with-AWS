@@ -888,10 +888,10 @@ def upload_image(id):
                     # upload_on_s3
                     print("My filename", filename)
 
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    file.save(os.path.join(UPLOAD_FOLDER, filename))
                     # print(app.config['UPLOAD_FOLDER'])
                     # file.save(filename)
-                    url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    url_for_image = os.path.join(UPLOAD_FOLDER, filename)
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
                     bookId = id
@@ -1099,8 +1099,8 @@ def update_image(id, imgId):
                     filename = secure_filename(file.filename)
 
                     print("filename: ",filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(os.path.join(UPLOAD_FOLDER, filename))
+                    url_for_image = os.path.join(UPLOAD_FOLDER, filename)
 
                     print("url: ", url_for_image)
 

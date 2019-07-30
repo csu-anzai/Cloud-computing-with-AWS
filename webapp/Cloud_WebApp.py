@@ -32,22 +32,12 @@ pathToConfig = "/home/centos/my.cnf"
 config.read(pathToConfig)
 
 
-#local_run = os.environ['LOCAL_RUN']
+local_run = config["Config"]['LOCAL_RUN']
 aws_region = config["Config"]["AWS_REGION_NAME"]
 print(aws_region)
 production_run = config["Config"]['PRODUCTION_RUN']
 print(production_run)
 
-
-""" Obtain aws credentials """
-
-# with open("/home/centos/CodeDeployEC2ServiceRole") as jsonFile:
-#     awsData = json.loads(jsonFile.read())
-
-# AWS_ACCESS_KEY = awsData['AccessKeyId']
-# AWS_SECRET_ACCESS_KEY_ID = awsData['SecretAccessKey']
-
-#print("Production run value", production_run)
 policy = PasswordPolicy.from_names(
     length=8,
     uppercase=0,  # need min. 0 uppercase letters
@@ -64,20 +54,20 @@ salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 app = Flask("__name__")
 
 
-#if(production_run):
-# print("In production_run")
-print(production_run)
-aws_s3_bucket_name = config["Config"]['S3_BUCKET_NAME']
-app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
-app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-app.config['MYSQL_DATABASE_HOST'] = config["Config"]['RDS_INSTANCE']
+if(production_run):
+    print("In production_run")
+    print(production_run)
+    aws_s3_bucket_name = config["Config"]['S3_BUCKET_NAME']
+    app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
+    app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
+    app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+    app.config['MYSQL_DATABASE_HOST'] = config["Config"]['RDS_INSTANCE']
 
-# elif(local_run):
-# 	app.config['MYSQL_DATABASE_USER'] = "root"
-# 	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
-# 	app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-# 	app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+elif(local_run):
+	app.config['MYSQL_DATABASE_USER'] = "root"
+	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
+	app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+	app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 db = MySQL()
 db.init_app(app)
@@ -1245,4 +1235,5 @@ if __name__ == '__main__':
 #     s3_client = boto3.client('s3')
 #     resp = s3_client.generate_presigned_url('get_object', Params = {'Bucket': aws_s3_bucket_name, 'Key': }, ExpiresIn = 100)
 #     print(resp)
+
 

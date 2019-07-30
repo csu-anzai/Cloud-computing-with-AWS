@@ -164,8 +164,6 @@ Resources:
 
                 "cd /home/centos",
 
-                "wget http://169.254.169.254/latest/meta-data/iam/security-credentials/CodeDeployEC2ServiceRole",
-
                 "cat > my.cnf << EOF",
 
                 "[Config]",
@@ -290,6 +288,7 @@ Resources:
                 Resource: 
                   - !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
                   - arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+        -
 
           PolicyName: AttachmentEC2S3
           PolicyDocument:
@@ -304,7 +303,7 @@ Resources:
                 Effect: Allow
                 Resource: 
                   - !Join ['', ['arn:aws:s3:::',csye6225-su19-*.*.*.*]]
-                  - arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+                  
             
   CodeDeployServiceRole:
 

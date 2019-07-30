@@ -41,11 +41,11 @@ print(production_run)
 
 """ Obtain aws credentials """
 
-with open("/home/centos/CodeDeployEC2ServiceRole") as jsonFile:
-    awsData = json.loads(jsonFile.read())
+# with open("/home/centos/CodeDeployEC2ServiceRole") as jsonFile:
+#     awsData = json.loads(jsonFile.read())
 
-AWS_ACCESS_KEY = awsData['AccessKeyId']
-AWS_SECRET_ACCESS_KEY_ID = awsData['SecretAccessKey']
+# AWS_ACCESS_KEY = awsData['AccessKeyId']
+# AWS_SECRET_ACCESS_KEY_ID = awsData['SecretAccessKey']
 
 #print("Production run value", production_run)
 policy = PasswordPolicy.from_names(

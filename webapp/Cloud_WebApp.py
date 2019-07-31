@@ -26,6 +26,11 @@ from mysql.connector import Error
 import subprocess
 from subprocess import call
 import json
+import statsd
+
+
+c = statsd.StatsClient('localhost', 8125)
+
 
 config = configparser.ConfigParser()
 pathToConfig = "/home/centos/my.cnf"
@@ -216,6 +221,7 @@ def presignedUrl( filename ):
 """ REGISTER USER """
 @app.route('/user/register', methods=['POST'])
 def register_user():
+    c.incr("api.register_user")
     try:
         if not request.get_json():
             return jsonify("Bad request"), 400
@@ -271,6 +277,7 @@ def register_user():
 """ ROUTE TO ROOT """
 @app.route("/")
 def index():
+    c.incr("api.index")
     
     """ VERIFYING BASIC AUTH """
     if not request.authorization:
@@ -304,6 +311,7 @@ def index():
 """ REGISTER BOOK """
 @app.route("/book", methods=["POST"])
 def register_book():
+    c.incr("api.register_book")
     try:
 
         """ AUTHENTICATE BY TOKEN """
@@ -407,6 +415,7 @@ GET BOOK BY ID
 """
 @app.route("/book/<string:id>", methods=["GET"])
 def request_a_book(id):
+    c.incr("api.request_a_book")
     try:
         bookId = id
 
@@ -509,6 +518,7 @@ GET ALL BOOKS
 """
 @app.route("/book", methods=["GET"])
 def request_all_books():
+    c.incr("api.request_all_books")
     try:
 
         """ AUTHENTICATE BY TOKEN """
@@ -633,6 +643,7 @@ UPDATE A BOOK
 """
 @app.route("/book", methods=["PUT"])
 def update_book():
+    c.incr("api.update_book")
     try:
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get('Authorization'):
@@ -758,6 +769,7 @@ DELETE A BOOK
 """
 @app.route("/book/<string:id>", methods=["DELETE"])
 def delete_book(id):
+    c.incr("api.delete_book")
     try:
         bookId = id
 
@@ -831,6 +843,7 @@ def delete_book(id):
 """ Upload book image """
 @app.route("/book/<string:id>/image", methods=["POST"])
 def upload_image(id):
+    c.incr("api.upload_image")
 
     conn = db.connect()
     cur = conn.cursor()
@@ -954,6 +967,7 @@ GET BOOK IMAGE
 """
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["GET"])
 def get_book_image(id, imgId):
+    c.incr("api.get_book_image")
     try:
         print("Getting pook image")
         bookId = id
@@ -1037,6 +1051,7 @@ def get_book_image(id, imgId):
 """ UPDATE BOOK IMAGE """
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["PUT"])
 def update_image(id, imgId):
+    c.incr("api.update_image")
     bookId = id
     imageId = imgId
 
@@ -1132,6 +1147,7 @@ DELETE A IMAGE
 """
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["DELETE"])
 def delete_image(id, imgId):
+    c.incr("api.delete_image")
     try:
         bookId = id
         imageId = imgId

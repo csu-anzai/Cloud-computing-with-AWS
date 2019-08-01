@@ -27,6 +27,11 @@ import subprocess
 from subprocess import call
 import json
 import statsd
+import logging
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
 
 
 c = statsd.StatsClient('localhost', 8125)
@@ -136,6 +141,7 @@ def create_database():
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
+    logger.info("Uploading image on s3")
     print("filename inupload: ", os.path.dirname(__file__) +  filename)
 
     key_filename = filename

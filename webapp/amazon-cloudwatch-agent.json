@@ -145,7 +145,7 @@
 
         ],
 
-        "metrics_collection_interval": 1
+        "metrics_collection_interval": 40
 
       },
 

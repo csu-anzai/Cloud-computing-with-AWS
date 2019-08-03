@@ -28,13 +28,15 @@ from subprocess import call
 import json
 import statsd
 import logging
+from flask_statsdclient import StatsDClient
+
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
 
 
-c = statsd.StatsClient('localhost', 8125)
+# c = statsd.StatsClient('localhost', 8125)
 
 
 config = configparser.ConfigParser()
@@ -81,6 +83,12 @@ elif(local_run):
 
 db = MySQL()
 db.init_app(app)
+
+app.config['STATSD_HOST'] = 'localhost'
+app.config['STATSD_PORT'] = 8125
+app.config['STATSD_PREFIX'] = 'statsd'
+
+c = StatsDClient(app)
 
  
 ''' IMAGES FOLDER PATH '''

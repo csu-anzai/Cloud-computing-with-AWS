@@ -32,8 +32,7 @@ from flask_statsdclient import StatsDClient
 
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel("INFO")
+
 
 
 # c = statsd.StatsClient('localhost', 8125)
@@ -89,7 +88,8 @@ app.config['STATSD_PORT'] = 8125
 app.config['STATSD_PREFIX'] = 'statsd'
 
 c = StatsDClient(app)
-
+logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
 UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
@@ -236,6 +236,8 @@ def presignedUrl( filename ):
 @app.route('/user/register', methods=['POST'])
 def register_user():
     c.incr("register_user")
+    logger.info("Registering for user")
+    logger.debug("Registering for user")
     try:
         if not request.get_json():
             return jsonify("Bad request"), 400

@@ -4,6 +4,7 @@ jobs:
     branches:
       only:
         - trial
+        - CloudWatch
         
     docker:
       - image: circleci/python:3.6-jessie

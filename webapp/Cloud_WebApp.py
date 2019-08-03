@@ -235,7 +235,7 @@ def presignedUrl( filename ):
 """ REGISTER USER """
 @app.route('/user/register', methods=['POST'])
 def register_user():
-    c.incr("api.register_user")
+    c.incr("register_user")
     try:
         if not request.get_json():
             return jsonify("Bad request"), 400

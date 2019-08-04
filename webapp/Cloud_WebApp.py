@@ -88,7 +88,7 @@ app.config['STATSD_PORT'] = 8125
 app.config['STATSD_PREFIX'] = 'statsd'
 
 c = StatsDClient(app)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(app)
 logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
@@ -1269,3 +1269,4 @@ if __name__ == '__main__':
 #     print(resp)
 
 
+# 

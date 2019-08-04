@@ -29,6 +29,8 @@ import json
 import statsd
 import logging
 from flask_statsdclient import StatsDClient
+import logging.config
+from logging.config import dictConfig
 
 
 
@@ -88,7 +90,42 @@ app.config['STATSD_PORT'] = 8125
 app.config['STATSD_PREFIX'] = 'statsd'
 
 c = StatsDClient(app)
-logger = logging.getLogger(app)
+
+
+
+""" Logging config """
+LOGGING_CONFIG = None
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '{asctime} {levelname} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    # 'filters': {
+    #     'require_debug_true': {
+    #          '()': 'django.utils.log.RequireDebugTrue',
+    #     },
+    # },
+    'handlers': {
+        'default': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename' : '/opt/aws/amazon-cloudwatch-agent/logs/csye6225.log',
+            'formatter': 'standard'
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['default'],
+            'propagate': True,
+        }
+    }
+})
+
+logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
@@ -294,6 +331,7 @@ def register_user():
 @app.route("/")
 def index():
     c.incr("api.index")
+    logger.info("User request auth")
     
     """ VERIFYING BASIC AUTH """
     if not request.authorization:

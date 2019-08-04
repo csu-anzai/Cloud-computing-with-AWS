@@ -4,7 +4,12 @@ os: linux
 files:             
   - source: /
     destination: /home/centos/deploy
+
 hooks:
+  BeforeInstall:
+    - location: infrastructure/aws/codedeploy/cleanServer.sh
+      timeout: 600
+      runas: centos
   ApplicationStart:
     - location: infrastructure/aws/codedeploy/startApp.sh
       timeout: 600

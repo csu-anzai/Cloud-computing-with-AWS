@@ -243,7 +243,7 @@
 
           {
 
-            "file_path": "/opt/aws/amazon-cloudwatch-agent/logs/csye6225_summer2019.log",
+            "file_path": "/opt/aws/amazon-cloudwatch-agent/logs/csye6225.log",
 
             "log_group_name": "csye6225_summer2019.log",
 

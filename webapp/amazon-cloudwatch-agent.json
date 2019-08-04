@@ -5,7 +5,7 @@
 
     "metrics_collection_interval": 10,
 
-    "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/csye6225.log"
+    "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/csye6225_summer2019.log"
 
   },
 
@@ -243,11 +243,11 @@
 
           {
 
-            "file_path": "/opt/aws/amazon-cloudwatch-agent/logs/csye6225.log",
+            "file_path": "/opt/aws/amazon-cloudwatch-agent/logs/csye6225_summer2019.log",
 
-            "log_group_name": "csye6225_summer2019",
+            "log_group_name": "csye6225_summer2019.log",
 
-            "log_stream_name": "csye6225-webapp",
+            "log_stream_name": "csye6225-webapp.log",
 
             "timezone": "UTC"
 

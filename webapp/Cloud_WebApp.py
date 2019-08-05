@@ -806,12 +806,6 @@ def update_book():
                 print("Book not entered")
                 logger.info("Book not entered")
                 return jsonify("Bad request"), 400
-
-        	# if (bookId == None):
-         #        print("Book id not entered")
-         #        logger.error("Book not entered")
-         #        return jsonify("Bad request"), 400
-
         	""" OBTAIN BOOK BY ID """
         	cur.execute("SELECT * FROM Books where id = %s", bookId)
         	book = cur.fetchone()
@@ -884,7 +878,6 @@ def update_book():
             logger.info("Book displayed to user with image")
 
         	return json.dumps(resUm, indent=4), 200
-        	# return "updated", 200
         logger.error("User not authorized")
         return jsonify("Unauthorized"), 401
 

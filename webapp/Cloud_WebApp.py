@@ -262,7 +262,11 @@ def register_user():
     c.incr("register_user")
     logger.info("Registering for user")
     try:
-        if not request.get_json():
+        registerJson = request.get_json():
+    except Exception as e:
+        logger.error("Error: ", e)
+    try:
+        if not registerJson:
             logger.error("Json format error")
             return jsonify("Bad request"), 400
         try:
@@ -314,10 +318,11 @@ def register_user():
 
             conn.commit()
             cur.close()
+            logger.info("Database connection closed")
 
             return jsonify('User registered successfully'), 200
         except Exception as e:
-            logger.error("Erros: ", e)
+            logger.error("Error: ", e)
             return jsonify(e), 500
     except Exception as e:
         logger.error("Error: ", e)
@@ -333,6 +338,7 @@ def index():
     
     """ VERIFYING BASIC AUTH """
     if not request.authorization:
+        logger.error("Email or password not entered")
         return jsonify("Unauthorized"), 401
 
     username = request.authorization.username
@@ -345,11 +351,13 @@ def index():
 
     """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
     if not user:
+        logger.error("User does not exist in database")
         return jsonify("Unauthorized"), 401
 
     userData = {}
     userData["username"] = user[0]
     userData["password"] = user[1]
+
 
     if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
         cur.close()

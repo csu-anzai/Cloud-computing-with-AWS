@@ -281,37 +281,46 @@ def register_user():
             """ VERIFY PASSWORD """
             myPassword = request.json.get('password')
             if not myPassword:
+                logger.error("Password not found")
                 return jsonify("Bad request"), 400
 
             """ CHECKING STRENGTH OF PASSWORD """
             if policy.test(myPassword):
+                logger.error("Password not strong enough")
                 return jsonify("Password not strong enough"), 400
 
             """ HASHING PASSWORD """
             password = bcrypt.hashpw(myPassword.encode('utf-8'), salt)
-
+            logger.info("Password encrypted")
 
             """ CHECK IF USER EXISITS """
             conn = db.connect()
+            logger.info("Connecting to database")
             cur = conn.cursor()
+            logger.info("Creating cursor for database")
 
             cur.execute("SELECT * FROM Person where username=%s", email)
+            logger.info("Fetching user details from database")
             user = cur.fetchone()
 
             if user is not None:
+                logger.error("user already exists")
                 return jsonify("User already exists"), 200
 
 
             """ ADDING USER TO DATABASE """
             cur.execute("INSERT INTO Person(id, username, password) VALUES (uuid(), %s, %s)", (email, password))
+            logger.info("User registration successful")
 
             conn.commit()
             cur.close()
 
             return jsonify('User registered successfully'), 200
         except Exception as e:
+            logger.error("Erros: ", e)
             return jsonify(e), 500
     except Exception as e:
+        logger.error("Error: ", e)
         return jsonify(e), 400
 
 

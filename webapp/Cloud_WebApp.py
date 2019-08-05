@@ -130,7 +130,7 @@ app.config['SECRET_KEY'] = 'my_key'
 rds = config["Config"]['RDS_INSTANCE']    
 dbUser = config["Config"]['MYSQL_DATABASE_USER']    
 dbPass = config["Config"]['MYSQL_DATABASE_PASSWORD'] 
-
+ 
 """ CREATE DB TABLES """   
 rdsInstance = "-h"+rds
 dataUser = "-u"+dbUser
@@ -142,8 +142,8 @@ print("Database created")
 print("RDS", rds)
 try:
     connection = mysql.connector.connect(host=rds,
-        user = 'csye6225master',
-        password = 'csye6225password',
+        user = dbUser,
+        password = dbPass,
         database = 'csye6225',
         buffered=True)
     if connection.is_connected():
@@ -155,6 +155,7 @@ except Error as e:
 
 """ Create tables in Database """
 def create_database():
+    logger.info("Databse creation method initiated")
     print("db", db)
     # conn = connection.connect()
 
@@ -168,6 +169,7 @@ def create_database():
     cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, PRIMARY KEY ( id ))")
     cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
     print("Tables created")
+    logger.info("Tables created")
 
 
 
@@ -196,6 +198,7 @@ def upload_on_s3( filename ):
         Key=key_filename
     )
     print("UPLOAD SUCCESSFULL")
+    logger.info("Image uploaded in s3")
 
 
 """ DELETE IMAGE FROM S3 BUCKET """
@@ -222,8 +225,10 @@ def delete_image_from_s3( filename ):
             Key=key_filename)
     
 
-        print("deleted image from S3")            
+        print("deleted image from S3")
+        logger.info("Image deleted from s3")            
     except Exception as e:
+        logger.exception("Exception in image deletion from s3: ", e)
         print("Exception : ",e)
 
 
@@ -249,8 +254,11 @@ def presignedUrl( filename ):
         # return resp_url
 
         print(resp_url)
+        logger.info("presigned url generated")
     except Exception as e:
+        logger.exception("Exception in presigned url generaiton: ", e)
         print("Exception is:", e)
+    logger.info("Presigned url sent")
     return resp_url
     
 
@@ -794,10 +802,15 @@ def update_book():
         	bookId = request.json.get("id")
         	print("id : ", bookId)
 
-        	if (bookId == None):
-                print("Book id not entered")
-                logger.error("Book not entered")
+            if (bookId==None):
+                print("Book not entered")
+                logger.info("Book not entered")
                 return jsonify("Bad request"), 400
+
+        	# if (bookId == None):
+         #        print("Book id not entered")
+         #        logger.error("Book not entered")
+         #        return jsonify("Bad request"), 400
 
         	""" OBTAIN BOOK BY ID """
         	cur.execute("SELECT * FROM Books where id = %s", bookId)
@@ -1348,26 +1361,33 @@ def delete_image(id, imgId):
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get("Authorization"):
             print("no auth")
+            logger.error("Headers unavailable")
             return jsonify("Unauthorized"), 401
 
         myHeader = request.headers["Authorization"]
-        print("headera: ", myHeader)
+        print("headers: ", myHeader)
 
         if (myHeader == None):
+            logger.info("Headers unavailable")
             return jsonify("Unauthorized"), 401
 
-        decoded_header = base64.b64decode(myHeader)
-        decoded_header_by_utf = decoded_header.decode('utf-8')
-
-        dataDict = {}
-        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+        try:
+            decoded_header = base64.b64decode(myHeader)
+            decoded_header_by_utf = decoded_header.decode('utf-8')
+            dataDict = {}
+            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
+        except Exception as e:
+            logger.exception("Exception in bs4 decoding:", e)
+            return jsonify("Bad headers"), 401
 
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
         cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
         user = cur.fetchone()
         print("user: ", user)
+        logger.info("User fetched")
 
         if not user:
+            logger.info("User not available in database")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -1383,35 +1403,43 @@ def delete_image(id, imgId):
 
             cur.execute("SELECT * FROM Image WHERE id=%s", imgId)
             image = cur.fetchone()
+            logger.info("Image fetched from database")
             print("image :", image)
             imageUrl = image[1]
 
             if (image == None):
+                logger.info("Image not in database")
                 return jsonify("No content"), 204
 
             # if (book == None):
             #     return jsonify("No content"), 204
 
-            print("iamge book id : ", image[2])
+            print("image book id : ", image[2])
             print("book book id : ", bookId)
 
             if image[2] == bookId:
                 print("in if")
 
-                """ DELETE BOOK FROM DATABASE """
+                """ DELETE Image FROM DATABASE """
+                logger.info("Deleting book image from database")
                 cur.execute("DELETE FROM Image WHERE id=%s", image[0])
                 conn.commit()
                 cur.close()
+                logger.info("Deleting book image successful")
 
                 # if not local_run:
                 ''' DELETING IMAGE FROM S3 IF EXISIS '''
+                logger.info("Deleting book image form s3")
                 delete_image_from_s3(imageUrl)
+                logger.info("Deleting book image from s3 successful")
 
+            logger.info("Deleting book image successful")
             return jsonify('No Content'),204
-
+        logger.error("Invalid user information")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("exception : ", e)
+        logger.exception("Exception in deleting book image: ", e)
         return jsonify("Unauthorized"), 401
 
 
@@ -1433,7 +1461,9 @@ def shutdown():
 if __name__ == '__main__':
     
     """ RUN FLASK APP """
+    logger.info("Database creation initiated")
     create_database()
+    logger.info("Database created")
     app.run(host='0.0.0.0')
 
 

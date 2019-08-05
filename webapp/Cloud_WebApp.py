@@ -795,6 +795,7 @@ def update_book():
         	print("id : ", bookId)
 
         	if (bookId == None):
+                print("Book id not entered")
                 logger.error("Book not entered")
                 return jsonify("Bad request"), 400
 
@@ -1334,9 +1335,12 @@ DELETE A IMAGE
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["DELETE"])
 def delete_image(id, imgId):
     c.incr("api.delete_image")
+    logger.info("Deleting book image")
     try:
         bookId = id
+        logger.info("Book id fetched")
         imageId = imgId
+        logger.info("Image id fetched")
 
         conn = db.connect()
         cur = conn.cursor()

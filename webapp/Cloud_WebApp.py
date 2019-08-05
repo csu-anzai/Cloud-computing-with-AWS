@@ -264,7 +264,7 @@ def register_user():
     try:
         registerJson = request.get_json()
     except Exception as e:
-        logger.error("Error: ", e)
+        logger.exception("Error: ", e)
         return jsonify("Bad request one"), 400
     try:
         if not registerJson:
@@ -323,10 +323,10 @@ def register_user():
 
             return jsonify('User registered successfully'), 200
         except Exception as e:
-            logger.error("Error: ", e)
+            logger.exception("Exception: ", e)
             return jsonify(e), 500
     except Exception as e:
-        logger.error("Error: ", e)
+        logger.exception("Exception: ", e)
         return jsonify(e), 400
 
 
@@ -375,6 +375,7 @@ def index():
 @app.route("/book", methods=["POST"])
 def register_book():
     c.incr("api.register_book")
+    logger.info("In api for registering book")
     try:
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get("Authorization"):
@@ -419,6 +420,7 @@ def register_book():
                 return jsonify("Bad request"), 400
             try:
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
+                logger.info("Obtaining book data")
 
                 book_data = request.get_json()
                 image_data = book_data['image']
@@ -440,6 +442,7 @@ def register_book():
 
                         conn.commit()
                         cur.close()
+                        logger.info("User created in database")
 
                         return jsonify("Posted"), 200
 
@@ -455,11 +458,13 @@ def register_book():
                 bookData["quantity"] = test.quantity
                 bookData['Image'] = ''
                 json1 = json.dumps(bookData, indent=4)
+                logger.info("Fetching book details")
 
                 image_array = {}
                 image_array['book_id'] = img_set.book_id
                 print("Image data for json", image_array)
                 image_array['url'] = img_set.url
+                logger.info("Fetching image details")
 
                 json2 = json.dumps(image_array, indent=4)
                 print(json2)
@@ -467,13 +472,16 @@ def register_book():
                 print (resUm)
                 resUm['Image'] = json.loads(json2)
                 print("no ans")
+                logger.info("Book with image details obtained")
                 return json.dumps(resUm, indent=4), 200
             except Exception as e:
+                logger.exception("Exception in fetching book details: ", e)
                 print("in exception")
                 return jsonify("Bad request"), 400
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("outer exception")
+        logger.exception("Exception in registering user: ", e)
         return jsonify("Unauthorized"), 401
 
 
@@ -484,6 +492,7 @@ GET BOOK BY ID
 @app.route("/book/<string:id>", methods=["GET"])
 def request_a_book(id):
     c.incr("api.request_a_book")
+    logger.info("User authenticated")
     try:
         bookId = id
 
@@ -587,15 +596,17 @@ GET ALL BOOKS
 @app.route("/book", methods=["GET"])
 def request_all_books():
     c.incr("api.request_all_books")
+    logger.info("Requesting all books")
     try:
-
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get('Authorization'):
+            logger.error("Authentication headers unavailable")
             return jsonify("Unauthorized"), 401
 
         """ OBTAIN HEADER """
         myHeader = request.headers["Authorization"]
         if (myHeader == None):
+            logger.info("Authentication headers unavailable")
             return jsonify("Unauthorized"), 401
 
 
@@ -613,6 +624,7 @@ def request_all_books():
         user = cur.fetchone()
 
         if not user:
+            logger.info("User unavailable in Database")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -623,15 +635,18 @@ def request_all_books():
 
             cur.execute("SELECT * FROM Books")
             books = cur.fetchall()
+            logger.info("All books fetched")
             print(len(books))
 
             cur.execute("SELECT * FROM Image")
             img_es = cur.fetchall()
+            logger.info("All images fetched")
             print(len(img_es))
 
             output = []
             for book in books:
                 if not img_es:
+                    logger.info("No image in database")
                     print("no images")
                     bookData = {}
                     bookData["id"] = book[0]
@@ -642,11 +657,13 @@ def request_all_books():
                     bookData["quantity"] = book[4]
                     bookData['Image'] = ''
                     json1 = json.dumps(bookData, indent=4)
+                    logger.info("Books fetched")
 
                     image_array = {}
                     image_array["id"] = ''
                     image_array["url"] = ''
                     json2 = json.dumps(image_array, indent=4)
+                    logger.info("Images fetched")
 
                     resUm = json.loads(json1)
                     resUm['Image'] = json.loads(json2)
@@ -656,6 +673,7 @@ def request_all_books():
             
                 else:
                     for img in img_es:
+                        logger.info("Obtaining Image")
                         bookData = {}
                         bookData["id"] = book[0]
                         bookData["title"] = book[1]
@@ -667,6 +685,7 @@ def request_all_books():
                         json1 = json.dumps(bookData, indent=4)
 
                         if img[2]==book[0]:
+                            logger.info("Obtaining book")
                             image_array = {}
                             image_array["id"] = img[0]
                             image_array["url"] = img[1]
@@ -696,12 +715,13 @@ def request_all_books():
 
                             cur.close()
                             
-
+            logger.info("All books fetched")
             return jsonify(output), 200
-
+        logger.error("User not authenticated")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("first try exception")
+        logger.exception("Exception in fetching all books: ", e)
         return jsonify(e), 500
 
 

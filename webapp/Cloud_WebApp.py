@@ -265,6 +265,7 @@ def register_user():
         registerJson = request.get_json()
     except Exception as e:
         logger.error("Error: ", e)
+        return jsonify("Bad request"), 400
     try:
         if not registerJson:
             logger.error("Json format error")
@@ -308,7 +309,7 @@ def register_user():
             user = cur.fetchone()
 
             if user is not None:
-                logger.error("user already exists")
+                logger.info("user already exists")
                 return jsonify("User already exists"), 200
 
 
@@ -375,14 +376,15 @@ def index():
 def register_book():
     c.incr("api.register_book")
     try:
-
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get("Authorization"):
+            logger.info("No token available for authentication")
             return jsonify("Unauthorized"), 401
 
         myHeader = request.headers["Authorization"]
 
         if (myHeader == None):
+            logger.info("Authorization headers unavailable")
             return jsonify("Unauthorized"), 401
 
         decoded_header = base64.b64decode(myHeader)

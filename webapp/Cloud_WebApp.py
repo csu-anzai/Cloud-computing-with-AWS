@@ -82,10 +82,10 @@ if(production_run):
 
 
 elif(local_run):
-	app.config['MYSQL_DATABASE_USER'] = "root"
-	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
-	app.config['MYSQL_DATABASE_DB'] = 'csye6225'
-	app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+____app.config['MYSQL_DATABASE_USER'] = "root"
+____app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
+____app.config['MYSQL_DATABASE_DB'] = 'csye6225'
+____app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 """ Logging config """
 LOGGING_CONFIG = None
@@ -796,94 +796,94 @@ def update_book():
         """ VERIFY TOKEN """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
-        	print("in if")
+        ____print("in if")
 
-        	""" OBTAIN BOOK ID TO COMARE IN DATABASE """
-        	bookId = request.json.get("id")
-        	print("id : ", bookId)
+        ____""" OBTAIN BOOK ID TO COMARE IN DATABASE """
+        ____bookId = request.json.get("id")
+        ____print("id : ", bookId)
 
             if (bookId==None):
                 print("Book not entered")
                 logger.info("Book not entered")
                 return jsonify("Bad request"), 400
-        	""" OBTAIN BOOK BY ID """
-        	cur.execute("SELECT * FROM Books where id = %s", bookId)
-        	book = cur.fetchone()
-        	cur.close
-        	print("book : ", book)
+        ____""" OBTAIN BOOK BY ID """
+        ____cur.execute("SELECT * FROM Books where id = %s", bookId)
+        ____book = cur.fetchone()
+        ____cur.close
+        ____print("book : ", book)
 
-        	if (book == None):
+        ____if (book == None):
                 logger.error("Book unavailable in database")
-        		return jsonify("No content"), 204
+        ________return jsonify("No content"), 204
 
-        	cur = conn.cursor()
+        ____cur = conn.cursor()
 
-        	cur.execute("SELECT * FROM Image where book_id=%s", bookId)
-        	image = cur.fetchone()
+        ____cur.execute("SELECT * FROM Image where book_id=%s", bookId)
+        ____image = cur.fetchone()
             try:
 
-        	   book_data = request.get_json()
-        	except Exception as e:
+        ____   book_data = request.get_json()
+        ____except Exception as e:
                 logger.exception("Exception in fetching book: ", e)
                 return jsonify("Bad request"), 400
 
-        	sql_update_query = """UPDATE Books SET title=%s, author=%s, isbn=%s, quantity=%s where id=%s"""
-        	title = book_data['title']
-        	author = book_data['author']
-        	isbn = book_data['isbn']
-        	quantity = book_data['quantity']
-        	id = book_data['id']
+        ____sql_update_query = """UPDATE Books SET title=%s, author=%s, isbn=%s, quantity=%s where id=%s"""
+        ____title = book_data['title']
+        ____author = book_data['author']
+        ____isbn = book_data['isbn']
+        ____quantity = book_data['quantity']
+        ____id = book_data['id']
 
-        	inputValues = (title, author, isbn, quantity, id)
-        	cur.execute(sql_update_query, inputValues)
+        ____inputValues = (title, author, isbn, quantity, id)
+        ____cur.execute(sql_update_query, inputValues)
             logger.info("Updating book data")
 
-        	conn.commit()
+        ____conn.commit()
 
-        	cur.execute("SELECT * FROM Books where id=%s", book_data['id'])
-        	book = cur.fetchone()
+        ____cur.execute("SELECT * FROM Books where id=%s", book_data['id'])
+        ____book = cur.fetchone()
 
-        	cur.execute("SELECT * FROM Image where book_id=%s", book_data['id'])
-        	image = cur.fetchone()
+        ____cur.execute("SELECT * FROM Image where book_id=%s", book_data['id'])
+        ____image = cur.fetchone()
 
 
-        	""" DISPLAY BOOK DETAILS """
-        	bookData = {}
-        	bookData["id"] = book[0]
-        	bookData["title"] = book[1]
-        	bookData["author"] = book[2]
-        	bookData["isbn"] = book[3]
-        	bookData["quantity"] = book[4]
-        	bookData['Image'] = ''
+        ____""" DISPLAY BOOK DETAILS """
+        ____bookData = {}
+        ____bookData["id"] = book[0]
+        ____bookData["title"] = book[1]
+        ____bookData["author"] = book[2]
+        ____bookData["isbn"] = book[3]
+        ____bookData["quantity"] = book[4]
+        ____bookData['Image'] = ''
 
-        	json1 = json.dumps(bookData, indent=4)
+        ____json1 = json.dumps(bookData, indent=4)
 
-        	image_array = {}
-        	if not image:
-        		image_array['id'] = ''
-        		image_array['url'] = ''
+        ____image_array = {}
+        ____if not image:
+        ________image_array['id'] = ''
+        ________image_array['url'] = ''
 
-        		json2 = json.dumps(image_array, indent=4)
-        		resUm = json.loads(json1)
-        		resUm['Image'] = json.loads(json2)
+        ________json2 = json.dumps(image_array, indent=4)
+        ________resUm = json.loads(json1)
+        ________resUm['Image'] = json.loads(json2)
                 logger.info("Book displayed to user")
-        		return json.dumps(resUm, indent=4), 200
+        ________return json.dumps(resUm, indent=4), 200
 
-        	image_array['id'] = image[0]
-        	image_array['url'] = image[1]
+        ____image_array['id'] = image[0]
+        ____image_array['url'] = image[1]
 
-        	json2 = json.dumps(image_array, indent=4)
-        	resUm = json.loads(json1)
-        	resUm['Image'] = json.loads(json2)
+        ____json2 = json.dumps(image_array, indent=4)
+        ____resUm = json.loads(json1)
+        ____resUm['Image'] = json.loads(json2)
             logger.info("Book displayed to user with image")
 
-        	return json.dumps(resUm, indent=4), 200
+        ____return json.dumps(resUm, indent=4), 200
         logger.error("User not authorized")
         return jsonify("Unauthorized"), 401
 
     except Exception as e:
         logger.exception("Exception in updating book: ", e)
-    	return jsonify("Unauthorized"), 401
+    ____return jsonify("Unauthorized"), 401
 
 
 
@@ -922,9 +922,9 @@ def delete_book(id):
         user = cur.fetchone()
 
         if not user:
-        	print("not usuer")
+        ____print("not usuer")
             logger.info("user not registered")
-        	return jsonify("Unauthorized"), 401
+        ____return jsonify("Unauthorized"), 401
 
         userData = {}
         userData["username"] = user[1]
@@ -942,17 +942,17 @@ def delete_book(id):
             print("url: ",imageUrl)
 
             if not img_set:
-            	cur.execute("DELETE FROM Books WHERE id=%s", bookId)
-            	conn.commit()
+            ____cur.execute("DELETE FROM Books WHERE id=%s", bookId)
+            ____conn.commit()
                 logger.info("Book without image deleted")
             else:
-            	""" DELETE BOOK FROM DATABASE """
-            	cur.execute("DELETE FROM Books WHERE id=%s", bookId)
-            	conn.commit()
+            ____""" DELETE BOOK FROM DATABASE """
+            ____cur.execute("DELETE FROM Books WHERE id=%s", bookId)
+            ____conn.commit()
                 logger.info("Book alone deleted")
 
-            	cur.execute("DELETE FROM Image WHERE id=%s", img_set[0])
-            	conn.commit()
+            ____cur.execute("DELETE FROM Image WHERE id=%s", img_set[0])
+            ____conn.commit()
                 logger.info("Book's image also deleted")
             
             cur.close()
@@ -1310,9 +1310,9 @@ def update_image(id, imgId):
                     logger.info("Book fetched from database")
 
                     if (book == None):
-                    	print("no book")
+                    ____print("no book")
                         logger.error("Book not available in database")
-                    	return jsonify("No content"), 204
+                    ____return jsonify("No content"), 204
 
                     cur.execute("SELECT * FROM Image WHERE id=%s", imageId)
                     imageDb = cur.fetchone()
@@ -1320,13 +1320,13 @@ def update_image(id, imgId):
 
                     if imageDb:
                         logger.info("Updating book image")
-	                    cur.execute("UPDATE Image SET url=%s WHERE book_id=%s", (url_for_image, bookId))
-	                    conn.commit()
-	                    cur.close()
+____                    cur.execute("UPDATE Image SET url=%s WHERE book_id=%s", (url_for_image, bookId))
+____                    conn.commit()
+____                    cur.close()
                         logger.info("Book image updated")
 
-	                # else:
-	                	# return jsonify('Cannot update'), 204
+____                # else:
+____                ____# return jsonify('Cannot update'), 204
                 logger.info("Updating book image successful")
                 return jsonify('No Content'),204
             logger.info("Updating book image details")

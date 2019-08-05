@@ -796,7 +796,7 @@ def update_book():
 
         	if (bookId == None):
                 logger.error("Book not entered")
-        		return jsonify("Bad request"), 400
+                return jsonify("Bad request"), 400
 
         	""" OBTAIN BOOK BY ID """
         	cur.execute("SELECT * FROM Books where id = %s", bookId)

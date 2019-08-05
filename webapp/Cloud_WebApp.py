@@ -265,11 +265,11 @@ def register_user():
         registerJson = request.get_json()
     except Exception as e:
         logger.error("Error: ", e)
-        return jsonify("Bad request"), 400
+        return jsonify("Bad request one"), 400
     try:
         if not registerJson:
             logger.error("Json format error")
-            return jsonify("Bad request"), 400
+            return jsonify("Bad request two"), 400
         try:
             email = request.json.get('username')
             print("email : ",email)
@@ -400,9 +400,11 @@ def register_book():
 
         cur.execute("SELECT username, password FROM Person where username=%s", dataDict["username"])
         user = cur.fetchone()
+        logger.info("Fetching user from database")
         print("user : ", user)
 
         if not user:
+            logger.error("User not found")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -411,7 +413,9 @@ def register_book():
 
         """ VERIFY USER """
         if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+            logger.info("User verified")
             if not request.json:
+                logger.error("Book details not entered in proper format")
                 return jsonify("Bad request"), 400
             try:
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """

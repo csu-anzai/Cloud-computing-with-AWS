@@ -33,24 +33,20 @@ import logging.config
 from logging.config import dictConfig
 
 
-
-
-
-
-# c = statsd.StatsClient('localhost', 8125)
-
-
+""" Config parser """
 config = configparser.ConfigParser()
 pathToConfig = "/home/centos/my.cnf"
 config.read(pathToConfig)
 
-
+""" Storing cofig variables in python variables """
 local_run = config["Config"]['LOCAL_RUN']
 aws_region = config["Config"]["AWS_REGION_NAME"]
 print(aws_region)
 production_run = config["Config"]['PRODUCTION_RUN']
 print(production_run)
 
+
+""" A password policy """
 policy = PasswordPolicy.from_names(
     length=8,
     uppercase=0,  # need min. 0 uppercase letters
@@ -63,10 +59,18 @@ policy = PasswordPolicy.from_names(
 """ Set salt encoding beginning code"""
 salt = b"$2a$12$w40nlebw3XyoZ5Cqke14M."
 
-""" Initiate flask in app """
+""" Initiate flask in app, db and statsd """
 app = Flask("__name__")
+db = MySQL()
+c = StatsDClient(app)
+db.init_app(app)
 
+""" Initiate statsd """
+app.config['STATSD_HOST'] = 'localhost'
+app.config['STATSD_PORT'] = 8125
+app.config['STATSD_PREFIX'] = 'statsd'
 
+""" Initiate database """
 if(production_run):
     print("In production_run")
     print(production_run)
@@ -76,22 +80,12 @@ if(production_run):
     app.config['MYSQL_DATABASE_DB'] = 'csye6225'
     app.config['MYSQL_DATABASE_HOST'] = config["Config"]['RDS_INSTANCE']
 
+
 elif(local_run):
 	app.config['MYSQL_DATABASE_USER'] = "root"
 	app.config['MYSQL_DATABASE_PASSWORD'] = 'password'
 	app.config['MYSQL_DATABASE_DB'] = 'csye6225'
 	app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-
-db = MySQL()
-db.init_app(app)
-
-app.config['STATSD_HOST'] = 'localhost'
-app.config['STATSD_PORT'] = 8125
-app.config['STATSD_PREFIX'] = 'statsd'
-
-c = StatsDClient(app)
-
-
 
 """ Logging config """
 LOGGING_CONFIG = None
@@ -104,11 +98,6 @@ logging.config.dictConfig({
             'style': '{',
         },
     },
-    # 'filters': {
-    #     'require_debug_true': {
-    #          '()': 'django.utils.log.RequireDebugTrue',
-    #     },
-    # },
     'handlers': {
         'default': {
             'level': 'DEBUG',
@@ -150,8 +139,6 @@ dataPass = "-p"+dbPass
 print("Database created")
 
 """ Connect to RDS instance """
-
-
 print("RDS", rds)
 try:
     connection = mysql.connector.connect(host=rds,
@@ -274,19 +261,21 @@ def presignedUrl( filename ):
 def register_user():
     c.incr("register_user")
     logger.info("Registering for user")
-    logger.debug("Registering for user")
     try:
         if not request.get_json():
+            logger.error("Json format error")
             return jsonify("Bad request"), 400
         try:
             email = request.json.get('username')
             print("email : ",email)
             if not email:
+                logger.error("Email not found")
                 return jsonify("Bad request"), 400
 
             """ VERIFY EMAIL """
             is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
             if not is_valid:
+                logger.error("Invalid email format")
                 return jsonify("Bad email request"), 400
 
             """ VERIFY PASSWORD """

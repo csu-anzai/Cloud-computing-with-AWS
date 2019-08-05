@@ -1211,7 +1211,6 @@ def get_book_image(id, imgId):
         logger.info("Database connection closed")
         logger.error("Invalid login information")
         return jsonify("Unauthorized"), 401
-    logger.error("Exception in fetching image details: ", e)
     except Exception as e:
 
         print("in exception", e)

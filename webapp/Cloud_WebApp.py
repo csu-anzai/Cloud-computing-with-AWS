@@ -228,7 +228,7 @@ def delete_image_from_s3( filename ):
         print("deleted image from S3")
         logger.info("Image deleted from s3")            
     except Exception as e:
-        logger.exception("Exception in image deletion from s3: ", e)
+        logger.error("Exception in image deletion from s3: ", e)
         print("Exception : ",e)
 
 
@@ -256,7 +256,7 @@ def presignedUrl( filename ):
         print(resp_url)
         logger.info("presigned url generated")
     except Exception as e:
-        logger.exception("Exception in presigned url generaiton: ", e)
+        logger.error("Exception in presigned url generaiton: ", e)
         print("Exception is:", e)
     logger.info("Presigned url sent")
     return resp_url
@@ -272,7 +272,7 @@ def register_user():
     try:
         request.get_json()
     except Exception as e:
-        logger.exception("Error: ", e)
+        logger.error("Error: ", e)
         return jsonify("Bad request one"), 400
     try:
         if not request.get_json():
@@ -331,10 +331,10 @@ def register_user():
 
             return jsonify('User registered successfully'), 200
         except Exception as e:
-            logger.exception("Exception: ", e)
+            logger.error("Exception: ", e)
             return jsonify(e), 500
     except Exception as e:
-        logger.exception("Exception: ", e)
+        logger.error("Exception: ", e)
         return jsonify(e), 400
 
 
@@ -402,7 +402,7 @@ def register_book():
             dataDict = {}
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
-            logger.exception("Exception in bs4 decoding:", e)
+            logger.error("Exception in bs4 decoding:", e)
             return jsonify("Bad headers"), 401
         print("header data dict: ", dataDict)
 
@@ -485,14 +485,14 @@ def register_book():
                 logger.info("Book with image details obtained")
                 return json.dumps(resUm, indent=4), 200
             except Exception as e:
-                logger.exception("Exception in fetching book details: ", e)
+                logger.error("Exception in fetching book details: ", e)
                 print("in exception")
                 return jsonify("Bad request"), 400
         logger.error("User not authenticated")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("outer exception")
-        logger.exception("Exception in registering user: ", e)
+        logger.error("Exception in registering user: ", e)
         return jsonify("Unauthorized"), 401
 
 
@@ -526,7 +526,7 @@ def request_a_book(id):
             dataDict = {}
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
-            logger.exception("Exception in bs4 decoding:", e)
+            logger.error("Exception in bs4 decoding:", e)
             return jsonify("Bad headers"), 401
         print(dataDict)
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
@@ -606,7 +606,7 @@ def request_a_book(id):
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("in exception")
-        logger.exception("Exception in fetching book by id: ", e)
+        logger.error("Exception in fetching book by id: ", e)
         return jsonify("Unauthorized"), 401
 
 """
@@ -636,7 +636,7 @@ def request_all_books():
             dataDict = {}
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
-            logger.exception("Exception in bs4 decoding:", e)
+            logger.error("Exception in bs4 decoding:", e)
             return jsonify("Bad headers"), 401
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
         # user = Person.query.filter_by(username=dataDict["username"]).first()
@@ -743,7 +743,7 @@ def request_all_books():
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("first try exception")
-        logger.exception("Exception in fetching all books: ", e)
+        logger.error("Exception in fetching all books: ", e)
         return jsonify(e), 500
 
 
@@ -771,7 +771,7 @@ def update_book():
             dataDict = {}
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
-            logger.exception("Exception in bs4 decoding:", e)
+            logger.error("Exception in bs4 decoding:", e)
             return jsonify("Bad headers"), 401
 
         conn = db.connect()
@@ -824,7 +824,7 @@ def update_book():
 
                book_data = request.get_json()
             except Exception as e:
-                logger.exception("Exception in fetching book: ", e)
+                logger.error("Exception in fetching book: ", e)
                 return jsonify("Bad request"), 400
 
             sql_update_query = """UPDATE Books SET title=%s, author=%s, isbn=%s, quantity=%s where id=%s"""
@@ -882,7 +882,7 @@ def update_book():
         return jsonify("Unauthorized"), 401
 
     except Exception as e:
-        logger.exception("Exception in updating book: ", e)
+        logger.error("Exception in updating book: ", e)
         return jsonify("Unauthorized"), 401
 
 
@@ -912,7 +912,7 @@ def delete_book(id):
             dataDict = {}
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
-            logger.exception("Exception in bs4 decoding:", e)
+            logger.error("Exception in bs4 decoding:", e)
             return jsonify("Bad headers"), 401
 
         conn = db.connect()
@@ -967,7 +967,7 @@ def delete_book(id):
         logger.error("User not authorized")
         return jsonify("Unauthorized"), 401
     except Exception as e:
-        logger.exception("Exception in deleting book: ", e)
+        logger.error("Exception in deleting book: ", e)
         return jsonify("Unauthorized"), 401
 
 """ Upload book image """
@@ -994,7 +994,7 @@ def upload_image(id):
         dataDict = {}
         dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
     except Exception as e:
-        logger.exception("Exception in bs4 decoding:", e)
+        logger.error("Exception in bs4 decoding:", e)
         return jsonify("Bad headers"), 401
 
 
@@ -1114,7 +1114,7 @@ def upload_image(id):
                     return json.dumps(resUm, indent=4), 201
 
         except Exception as e:
-            logger.exception("Exception in uploading book image: ", e)
+            logger.error("Exception in uploading book image: ", e)
             return jsonify(e), 500
 
 
@@ -1155,7 +1155,7 @@ def get_book_image(id, imgId):
             dataDict = {}
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
-            logger.exception("Exception in bs4 decoding:", e)
+            logger.error("Exception in bs4 decoding:", e)
             return jsonify("Bad headers"), 401
 
 
@@ -1211,11 +1211,11 @@ def get_book_image(id, imgId):
         logger.info("Database connection closed")
         logger.error("Invalid login information")
         return jsonify("Unauthorized"), 401
-    logger.exception("Exception in fetching image details: ", e)
+    logger.error("Exception in fetching image details: ", e)
     except Exception as e:
 
         print("in exception", e)
-        logger.exception("Exception in fetching image details: ", e)
+        logger.error("Exception in fetching image details: ", e)
         return jsonify("Unauthorized"), 401
 
 
@@ -1251,7 +1251,7 @@ def update_image(id, imgId):
         dataDict = {}
         dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
     except Exception as e:
-        logger.exception("Exceptio in decoding bs4: ",e)
+        logger.error("Exceptio in decoding bs4: ",e)
         return jsonify("Bad authorization headers"), 401
     """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
     cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
@@ -1332,7 +1332,7 @@ def update_image(id, imgId):
             logger.info("Updating book image details")
             return json.dumps(resUm, indent=4), 201
         except Exception as e:
-            logger.exception("Exception in updating book image: ", e)
+            logger.error("Exception in updating book image: ", e)
             return jsonify(e), 500
 
 """
@@ -1370,7 +1370,7 @@ def delete_image(id, imgId):
             dataDict = {}
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
-            logger.exception("Exception in bs4 decoding:", e)
+            logger.error("Exception in bs4 decoding:", e)
             return jsonify("Bad headers"), 401
 
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
@@ -1432,7 +1432,7 @@ def delete_image(id, imgId):
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("exception : ", e)
-        logger.exception("Exception in deleting book image: ", e)
+        logger.error("Exception in deleting book image: ", e)
         return jsonify("Unauthorized"), 401
 
 

@@ -262,7 +262,7 @@ def register_user():
     c.incr("register_user")
     logger.info("Registering for user")
     try:
-        registerJson = request.get_json():
+        registerJson = request.get_json()
     except Exception as e:
         logger.error("Error: ", e)
     try:
@@ -361,9 +361,11 @@ def index():
 
     if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
         cur.close()
+        logger.info("User authenticated")
         return jsonify(str(datetime.datetime.now())), 200
 
     cur.close()
+    logger.info("User credentials incorrect")
     return jsonify("Unauthorized"), 401
 
 

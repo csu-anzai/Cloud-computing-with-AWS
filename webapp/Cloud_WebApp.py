@@ -1,12 +1,8 @@
 #!/usr/bin/python
 
-from flask import (Flask,
-    request,
-    jsonify, url_for)
-from flask_sqlalchemy import SQLAlchemy
+from flask import (Flask, request, jsonify)
 from flaskext.mysql import MySQL
 import datetime
-import sqlite3
 import bcrypt
 import base64
 import uuid
@@ -14,24 +10,18 @@ import os
 from werkzeug.utils import secure_filename
 import json
 from password_strength import PasswordPolicy
-from password_strength import PasswordStats
 import re
 import boto3
 from botocore.client import Config
-import os
 import configparser
-import logging.config
-import mysql.connector
-from mysql.connector import Error
-import subprocess
-from subprocess import call
-import json
-import statsd
 import logging
-from flask_statsdclient import StatsDClient
 import logging.config
 from logging.config import dictConfig
-
+import mysql.connector
+from mysql.connector import Error
+import json
+import statsd
+from flask_statsdclient import StatsDClient
 
 """ Config parser """
 config = configparser.ConfigParser()
@@ -163,9 +153,7 @@ def create_database():
     cur = connection.cursor()
     print("cursor", cur)
     cur.execute("show databases")
-    # cur.execute("use csye6225")
     cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
-
     cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, PRIMARY KEY ( id ))")
     cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
     print("Tables created")
@@ -185,9 +173,6 @@ def upload_on_s3( filename ):
 
     s3 = boto3.client(
         "s3")
-        # aws_access_key_id = AWS_ACCESS_KEY,
-        # aws_secret_access_key = AWS_SECRET_ACCESS_KEY_ID
-    # )   
     bucket_resource = s3
 
     print("bucket_resource", bucket_resource)
@@ -209,16 +194,9 @@ def delete_image_from_s3( filename ):
 
     s3 = boto3.client(
         "s3")
-        # aws_access_key_id = AWS_ACCESS_KEY,
-        # aws_secret_access_key = AWS_SECRET_ACCESS_KEY_ID
-    # )
     bucket_resource = s3
     print("bucket_resource", bucket_resource)
     try:
-        # s3.deleteObject(
-        #   Bucket= aws_s3_bucket_name,
-        #   Key= key_filename
-        # ),
 
         s3.delete_object(
             Bucket = aws_s3_bucket_name,
@@ -237,8 +215,6 @@ def presignedUrl( filename ):
     filename = filename
     print("filename : ", filename)
     s3_client = boto3.client('s3',
-    # aws_access_key_id = AWS_ACCESS_KEY,
-    #     aws_secret_access_key = AWS_SECRET_ACCESS_KEY_ID,
          config=Config(signature_version='s3v4'))
     print("s3 client: ", s3_client)
     try:
@@ -251,7 +227,6 @@ def presignedUrl( filename ):
              },
             ExpiresIn = 60*2
         )
-        # return resp_url
 
         print(resp_url)
         logger.info("presigned url generated")
@@ -328,7 +303,7 @@ def register_user():
             conn.commit()
             cur.close()
             logger.info("Database connection closed")
-
+            c.incr("user_created")
             return jsonify('User registered successfully'), 200
         except Exception as e:
             logger.error("Exception: ", e)
@@ -342,12 +317,13 @@ def register_user():
 """ ROUTE TO ROOT """
 @app.route("/")
 def index():
-    c.incr("api.index")
+    c.incr("index")
     logger.info("User request auth")
     
     """ VERIFYING BASIC AUTH """
     if not request.authorization:
         logger.error("Email or password not entered")
+        c.incr("index_invalid_login")
         return jsonify("Unauthorized"), 401
 
     username = request.authorization.username
@@ -361,6 +337,7 @@ def index():
     """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
     if not user:
         logger.error("User does not exist in database")
+        c.incr("index_invalid_login")
         return jsonify("Unauthorized"), 401
 
     userData = {}
@@ -371,10 +348,12 @@ def index():
     if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
         cur.close()
         logger.info("User authenticated")
+        c.incr("index_valid_login")
         return jsonify(str(datetime.datetime.now())), 200
 
     cur.close()
     logger.error("User credentials incorrect")
+    c.incr("index_invalid_login")
     return jsonify("Unauthorized"), 401
 
 
@@ -382,18 +361,20 @@ def index():
 """ REGISTER BOOK """
 @app.route("/book", methods=["POST"])
 def register_book():
-    c.incr("api.register_book")
+    c.incr("register_book")
     logger.info("In api for registering book")
     try:
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get("Authorization"):
             logger.error("No token available for authentication")
+            c.incr("register_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         myHeader = request.headers["Authorization"]
 
         if (myHeader == None):
             logger.error("Authorization headers unavailable")
+            c.incr("register_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         try:
@@ -403,6 +384,7 @@ def register_book():
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
             logger.error("Exception in bs4 decoding:", e)
+            c.incr("register_book_invalid_login")
             return jsonify("Bad headers"), 401
         print("header data dict: ", dataDict)
 
@@ -428,6 +410,7 @@ def register_book():
             logger.info("User verified")
             if not request.json:
                 logger.error("Book details not entered in proper format")
+                c.incr("register_book_improper_format")
                 return jsonify("Bad request"), 400
             try:
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
@@ -453,7 +436,8 @@ def register_book():
 
                         conn.commit()
                         cur.close()
-                        logger.info("User created in database")
+                        logger.info("Book created in database")
+                        c.incr("book_registered")
                         return jsonify("Posted"), 200
 
 
@@ -487,12 +471,16 @@ def register_book():
             except Exception as e:
                 logger.error("Exception in fetching book details: ", e)
                 print("in exception")
+                logger.error("Book details not entered in proper format")
+                c.incr("register_book_improper_format")
                 return jsonify("Bad request"), 400
         logger.error("User not authenticated")
+        c.incr("register_book_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("outer exception")
         logger.error("Exception in registering user: ", e)
+        c.incr("register_book_invalid_login")
         return jsonify("Unauthorized"), 401
 
 
@@ -502,7 +490,7 @@ GET BOOK BY ID
 """
 @app.route("/book/<string:id>", methods=["GET"])
 def request_a_book(id):
-    c.incr("api.request_a_book")
+    c.incr("request_a_book")
     logger.info("Getting book by id")
     try:
         bookId = id
@@ -511,12 +499,14 @@ def request_a_book(id):
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get('Authorization'):
             logger.error("Headers unavailable")
+            c.incr("request_a_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         """ OBTAIN HEADER """
         myHeader = request.headers["Authorization"]
         if (myHeader == None):
             logger.error("Headers unavailable")
+            c.incr("request_a_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
 
@@ -527,10 +517,10 @@ def request_a_book(id):
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
             logger.error("Exception in bs4 decoding:", e)
+            c.incr("request_a_book_invalid_login")
             return jsonify("Bad headers"), 401
         print(dataDict)
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-        # user = Person.query.filter_by(username=dataDict["username"]).first()
         conn = db.connect()
         cur = conn.cursor()
         cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
@@ -538,6 +528,7 @@ def request_a_book(id):
 
         if not user:
             logger.error("User not available in database")
+            c.incr("request_a_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -555,6 +546,7 @@ def request_a_book(id):
 
             if (book == None):
                 logger.error("Book not available in database")
+                c.incr("request_a_book_not_found")
                 return jsonify("Not found"), 404
 
 
@@ -601,12 +593,15 @@ def request_a_book(id):
 
                 resUm['Image'] = json.loads(json2)
                 logger.info("Book available to user")
+                c.incr("request_a_book_success")
                 return json.dumps(resUm, indent=4), 200
         logger.error("User not authenticated")
+        c.incr("request_a_book_fail")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("in exception")
         logger.error("Exception in fetching book by id: ", e)
+        c.incr("request_a_book_fail")
         return jsonify("Unauthorized"), 401
 
 """
@@ -614,18 +609,20 @@ GET ALL BOOKS
 """
 @app.route("/book", methods=["GET"])
 def request_all_books():
-    c.incr("api.request_all_books")
+    c.incr("request_all_books")
     logger.info("Requesting all books")
     try:
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get('Authorization'):
             logger.error("Authentication headers unavailable")
+            c.incr("request_all_books_invalid_login")
             return jsonify("Unauthorized"), 401
 
         """ OBTAIN HEADER """
         myHeader = request.headers["Authorization"]
         if (myHeader == None):
             logger.info("Authentication headers unavailable")
+            c.incr("request_all_books_invalid_login")
             return jsonify("Unauthorized"), 401
 
         try:
@@ -637,6 +634,7 @@ def request_all_books():
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
             logger.error("Exception in bs4 decoding:", e)
+            c.incr("request_all_books_invalid_login")
             return jsonify("Bad headers"), 401
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
         # user = Person.query.filter_by(username=dataDict["username"]).first()
@@ -647,6 +645,7 @@ def request_all_books():
 
         if not user:
             logger.info("User unavailable in Database")
+            c.incr("request_all_books_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -738,12 +737,15 @@ def request_all_books():
                             cur.close()
                             
             logger.info("All books fetched")
+            c.incr("request_all_books_success")
             return jsonify(output), 200
         logger.error("User not authenticated")
+        c.incr("request_all_books_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("first try exception")
         logger.error("Exception in fetching all books: ", e)
+        c.incr("request_all_books_invalid_login")
         return jsonify(e), 500
 
 
@@ -753,12 +755,13 @@ UPDATE A BOOK
 """
 @app.route("/book", methods=["PUT"])
 def update_book():
-    c.incr("api.update_book")
+    c.incr("update_book")
     logger.info("api for updating book")
     try:
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get('Authorization'):
             logger.error("headers unavailable")
+            c.incr("update_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         """ OBTAIN HEADERS """
@@ -772,6 +775,7 @@ def update_book():
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
             logger.error("Exception in bs4 decoding:", e)
+            c.incr("update_book_invalid_login")
             return jsonify("Bad headers"), 401
 
         conn = db.connect()
@@ -783,6 +787,7 @@ def update_book():
 
         if not user:
             logger.error("User unavailable in database")
+            c.incr("update_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -825,6 +830,7 @@ def update_book():
                book_data = request.get_json()
             except Exception as e:
                 logger.error("Exception in fetching book: ", e)
+                c.incr("update_book_invalid_login")
                 return jsonify("Bad request"), 400
 
             sql_update_query = """UPDATE Books SET title=%s, author=%s, isbn=%s, quantity=%s where id=%s"""
@@ -876,13 +882,16 @@ def update_book():
             resUm = json.loads(json1)
             resUm['Image'] = json.loads(json2)
             logger.info("Book displayed to user with image")
+            c.incr("update_book_success")
 
             return json.dumps(resUm, indent=4), 200
         logger.error("User not authorized")
+        c.incr("update_book_invalid_login")
         return jsonify("Unauthorized"), 401
 
     except Exception as e:
         logger.error("Exception in updating book: ", e)
+        c.incr("update_book_invalid_login")
         return jsonify("Unauthorized"), 401
 
 
@@ -892,7 +901,7 @@ DELETE A BOOK
 """
 @app.route("/book/<string:id>", methods=["DELETE"])
 def delete_book(id):
-    c.incr("api.delete_book")
+    c.incr("delete_book")
     logger.info("Deleting book")
     try:
         bookId = id
@@ -900,6 +909,7 @@ def delete_book(id):
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get('Authorization'):
             logger.error("Headers unavailable")
+            c.incr("delete_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         """ OBTAIN HEADERS """
@@ -913,6 +923,7 @@ def delete_book(id):
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
             logger.error("Exception in bs4 decoding:", e)
+            c.incr("delete_book_invalid_login")
             return jsonify("Bad headers"), 401
 
         conn = db.connect()
@@ -924,6 +935,7 @@ def delete_book(id):
         if not user:
             print("not usuer")
             logger.info("user not registered")
+            c.incr("delete_book_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -965,15 +977,17 @@ def delete_book(id):
 
             return jsonify(''),204
         logger.error("User not authorized")
+        c.incr("delete_book_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         logger.error("Exception in deleting book: ", e)
+        c.incr("delete_book_invalid_login")
         return jsonify("Unauthorized"), 401
 
 """ Upload book image """
 @app.route("/book/<string:id>/image", methods=["POST"])
 def upload_image(id):
-    c.incr("api.upload_image")
+    c.incr("upload_image")
     logger.info("Uploading book image")
     conn = db.connect()
     cur = conn.cursor()
@@ -981,11 +995,13 @@ def upload_image(id):
     """ AUTHENTICATE BY TOKEN """
     if not request.headers.get("Authorization"):
         logger.error("Headers unavailable")
+        c.incr("upload_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
     myHeader = request.headers["Authorization"]
     if (myHeader == None):
         logger.error("Headers unavailable")
+        c.incr("upload_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
     try:
@@ -995,6 +1011,7 @@ def upload_image(id):
         dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
     except Exception as e:
         logger.error("Exception in bs4 decoding:", e)
+        c.incr("upload_image_invalid_login")
         return jsonify("Bad headers"), 401
 
 
@@ -1003,6 +1020,7 @@ def upload_image(id):
 
     if not user:
         logger.error("User not registered")
+        c.incr("upload_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
     userData = {}
@@ -1042,6 +1060,7 @@ def upload_image(id):
                     logger.info("Book id fetched")
                     if (bookId == None):
                         logger.error("Book not available")
+                        c.incr("upload_image_invalid_book_request")
                         return jsonify("Bad request"), 400
 
                     """ OBTAIN BOOK BY ID """
@@ -1052,6 +1071,7 @@ def upload_image(id):
 
                     if (book == None):
                         logger.error("Book not found in database")
+                        c.incr("upload_image_invalid_book_request")
                         return jsonify("No content"), 204
                     logger.info("Fetching book image")
                     cur.execute("SELECT * FROM Image WHERE book_id=%s", bookId)
@@ -1110,11 +1130,13 @@ def upload_image(id):
  
                     cur.close()
                     logger.info("Book with image displayed")
+                    c.incr("upload_image_success")
 
                     return json.dumps(resUm, indent=4), 201
 
         except Exception as e:
             logger.error("Exception in uploading book image: ", e)
+            c.incr("upload_image_invalid_login")
             return jsonify(e), 500
 
 
@@ -1124,7 +1146,7 @@ GET BOOK IMAGE
 """
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["GET"])
 def get_book_image(id, imgId):
-    c.incr("api.get_book_image")
+    c.incr("get_book_image")
     logger.info("Getting book image from id")
     try:
         print("Getting book image")
@@ -1142,11 +1164,13 @@ def get_book_image(id, imgId):
         """ AUTHENTICATE BY TOKEN """
         if not request.headers.get("Authorization"):
             logger.error("Headers unavailable")
+            c.incr("get_book_image_invalid_login")
             return jsonify("Unauthorized"), 401
 
         myHeader = request.headers["Authorization"]
         if (myHeader == None):
             logger.info("Headers unavailable")
+            c.incr("get_book_image_invalid_login")
             return jsonify("Unauthorized"), 401
 
         try:
@@ -1156,6 +1180,7 @@ def get_book_image(id, imgId):
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
             logger.error("Exception in bs4 decoding:", e)
+            c.incr("get_book_image_invalid_login")
             return jsonify("Bad headers"), 401
 
 
@@ -1164,6 +1189,7 @@ def get_book_image(id, imgId):
 
         if not user:
             logger.error("user not found in database")
+            c.incr("get_book_image_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -1200,6 +1226,7 @@ def get_book_image(id, imgId):
                 print("image data url", image_data["url"])
                 output.append(image_data)
                 logger.info("Image details displayed to user")
+                c.incr("get_book_image_success")
                 return jsonify(output),200
 
 
@@ -1210,11 +1237,13 @@ def get_book_image(id, imgId):
         cur.close()
         logger.info("Database connection closed")
         logger.error("Invalid login information")
+        c.incr("get_book_image_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
 
         print("in exception", e)
         logger.error("Exception in fetching image details: ", e)
+        c.incr("get_book_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
 
@@ -1222,7 +1251,7 @@ def get_book_image(id, imgId):
 """ UPDATE BOOK IMAGE """
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["PUT"])
 def update_image(id, imgId):
-    c.incr("api.update_image")
+    c.incr("update_image")
     logger.info("Updating book image")
     bookId = id
     logger.info("Book id obtained")
@@ -1236,11 +1265,13 @@ def update_image(id, imgId):
     """ AUTHENTICATE BY TOKEN """
     if not request.headers.get("Authorization"):
         logger.info("Headers unavailable")
+        c.incr("update_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
     myHeader = request.headers["Authorization"]
     if (myHeader == None):
         logger.info("Headers unavailable")
+        c.incr("update_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
     try:
@@ -1251,6 +1282,7 @@ def update_image(id, imgId):
         dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
     except Exception as e:
         logger.error("Exceptio in decoding bs4: ",e)
+        c.incr("update_image_invalid_login")
         return jsonify("Bad authorization headers"), 401
     """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
     cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
@@ -1258,6 +1290,7 @@ def update_image(id, imgId):
 
     if not user:
         logger.error("User not available in database")
+        c.incr("update_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
     userData = {}
@@ -1268,7 +1301,8 @@ def update_image(id, imgId):
     if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
         if not request.json:
             logger.error("Bad json format")
-            jsonify("Bad request"), 400
+            c.incr("update_image_invalid_format")
+            return jsonify("Bad request"), 400
 
         try:
             print ("in upload_image")
@@ -1300,6 +1334,7 @@ def update_image(id, imgId):
                     bookId = id
                     if (bookId == None):
                         logger.error("Book id not available")
+                        c.incr("update_image_bad_request")
                         return jsonify("Bad request"), 400
 
                     """ OBTAIN BOOK BY ID """
@@ -1311,6 +1346,7 @@ def update_image(id, imgId):
                     if (book == None):
                         print("no book")
                         logger.error("Book not available in database")
+                        c.incr("update_image_bad_request")
                         return jsonify("No content"), 204
 
                     cur.execute("SELECT * FROM Image WHERE id=%s", imageId)
@@ -1327,11 +1363,13 @@ def update_image(id, imgId):
                     # else:
                         # return jsonify('Cannot update'), 204
                 logger.info("Updating book image successful")
+                c.incr("update_image_success")
                 return jsonify('No Content'),204
             logger.info("Updating book image details")
             return json.dumps(resUm, indent=4), 201
         except Exception as e:
             logger.error("Exception in updating book image: ", e)
+            c.incr("update_image_invalid_login")
             return jsonify(e), 500
 
 """
@@ -1339,7 +1377,7 @@ DELETE A IMAGE
 """
 @app.route("/book/<string:id>/image/<string:imgId>", methods=["DELETE"])
 def delete_image(id, imgId):
-    c.incr("api.delete_image")
+    c.incr("delete_image")
     logger.info("Deleting book image")
     try:
         bookId = id
@@ -1354,6 +1392,7 @@ def delete_image(id, imgId):
         if not request.headers.get("Authorization"):
             print("no auth")
             logger.error("Headers unavailable")
+            c.incr("delete_image_invalid_login")
             return jsonify("Unauthorized"), 401
 
         myHeader = request.headers["Authorization"]
@@ -1361,6 +1400,7 @@ def delete_image(id, imgId):
 
         if (myHeader == None):
             logger.info("Headers unavailable")
+            c.incr("delete_image_invalid_login")
             return jsonify("Unauthorized"), 401
 
         try:
@@ -1370,6 +1410,7 @@ def delete_image(id, imgId):
             dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
         except Exception as e:
             logger.error("Exception in bs4 decoding:", e)
+            c.incr("delete_image_invalid_login")
             return jsonify("Bad headers"), 401
 
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
@@ -1380,6 +1421,7 @@ def delete_image(id, imgId):
 
         if not user:
             logger.info("User not available in database")
+            c.incr("delete_image_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
@@ -1401,6 +1443,7 @@ def delete_image(id, imgId):
 
             if (image == None):
                 logger.info("Image not in database")
+                c.incr("delete_image_not_found")
                 return jsonify("No content"), 204
 
             # if (book == None):
@@ -1426,12 +1469,15 @@ def delete_image(id, imgId):
                 logger.info("Deleting book image from s3 successful")
 
             logger.info("Deleting book image successful")
+            c.incr("delete_image_success")
             return jsonify('No Content'),204
         logger.error("Invalid user information")
+        c.incr("delete_image_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
         print("exception : ", e)
         logger.error("Exception in deleting book image: ", e)
+        c.incr("delete_image_invalid_login")
         return jsonify("Unauthorized"), 401
 
 
@@ -1450,19 +1496,9 @@ def shutdown():
     shutdown_server()
     return 'Server shutting down...'
 
+""" RUN FLASK APP """
 if __name__ == '__main__':
-    
-    """ RUN FLASK APP """
     logger.info("Database creation initiated")
     create_database()
     logger.info("Database created")
     app.run(host='0.0.0.0')
-
-
-# def presignedUrl():
-#     s3_client = boto3.client('s3')
-#     resp = s3_client.generate_presigned_url('get_object', Params = {'Bucket': aws_s3_bucket_name, 'Key': }, ExpiresIn = 100)
-#     print(resp)
-
-
-# 

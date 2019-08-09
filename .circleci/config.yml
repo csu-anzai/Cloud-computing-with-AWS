@@ -32,7 +32,7 @@ jobs:
           name: Upload Artifact to S3
           command: |
             echo "Hello"
-            aws s3 sync ~/webapp.zip s3://$s3_bucket_name
+            aws s3 sync webapp.zip s3://$s3_bucket_name
             echo "Uploaded to s3"
       - run:
           name: Make CodeDeploy API call

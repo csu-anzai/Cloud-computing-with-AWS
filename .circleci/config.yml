@@ -15,7 +15,7 @@ jobs:
           command: |
             cd webapp
             ls -al
-            cd ../..
+            cd ..
       - run:
           name: Install awscli
           command: |
@@ -28,7 +28,6 @@ jobs:
           command: |
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             mkdir -p codedeploy_artifact
-            cp infrastructure/aws/codedeploy/*.sh .
             zip -r csye6225-web-app-${CIRCLE_BUILD_NUM}.zip *
             mv csye6225-web-app-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/
             cd codedeploy_artifact
@@ -37,7 +36,6 @@ jobs:
             cd ..
             pwd
             ls -al
-
 
       - run:
           name: Upload Artifact to S3

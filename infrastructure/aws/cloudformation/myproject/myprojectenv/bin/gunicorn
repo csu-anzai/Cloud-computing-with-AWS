@@ -1,0 +1,12 @@
+#!/bin/sh
+'''exec' "/Users/Adhira/Desktop/From desktop/Cloud/Assignment1/csye6225/dev/ccwebapp/infrastructure/aws/cloudformation/myproject/myprojectenv/bin/python3.7" "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import re
+import sys
+
+from gunicorn.app.wsgiapp import run
+
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
+    sys.exit(run())

@@ -3,24 +3,24 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/centos/deploy/webapp
+    destination: /home/centos/deploy
 hooks:
   BeforeInstall:
-    - location: cdScripts/clean_server.sh
+    - location: webapp/cdScripts/clean_server.sh
       timeout: 600
       runas: centos
   AfterInstall:
-    - location: cdScripts/installOSDependencies.sh
+    - location: webapp/cdScripts/installOSDependencies.sh
       timeout: 600
       runas: centos
-    - location: cdScripts/installPythonDependencies.sh
+    - location: webapp/cdScripts/installPythonDependencies.sh
       timeout: 600
       runas: centos
   ApplicationStart:
-    - location: cdScripts/startApp.sh
+    - location: webapp/cdScripts/startApp.sh
       timeout: 600
       runas: centos
   ApplicationStop:
-    - location: cdScripts/stopApp.sh
+    - location: webapp/cdScripts/stopApp.sh
       timeout: 600
       runas: centos

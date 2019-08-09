@@ -29,9 +29,14 @@ jobs:
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             cd webapp && zip -r ~/webapp.zip * 
       - run:
+          name: list directory
+          command: |
+            cd ~/ && ls
+      - run:
           name: Upload Artifact to S3
           command: |
             echo "Hello"
+            ls -al
             aws s3 sync webapp.zip s3://$s3_bucket_name
             echo "Uploaded to s3"
       - run:

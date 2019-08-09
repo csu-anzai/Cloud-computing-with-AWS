@@ -37,6 +37,7 @@ jobs:
           command: |
             echo "Hello"
             ls -al
+            cd webapp && ls -al
             aws s3 sync webapp.zip s3://$s3_bucket_name
             echo "Uploaded to s3"
       - run:

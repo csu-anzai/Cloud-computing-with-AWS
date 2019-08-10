@@ -1,4 +1,4 @@
-from Cloud_WebApp import application
+from Cloud_WebApp import app
 
 if __name__ == "__main__":
-    application.run()
+    app.run()

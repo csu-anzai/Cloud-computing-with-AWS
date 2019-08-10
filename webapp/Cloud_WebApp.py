@@ -157,8 +157,10 @@ def create_database():
     cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, timeofcreation varchar(100) PRIMARY KEY ( id ))")
     cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
     print("Tables created")
-    logger.info("Tables created")
-
+    # logger.info("Tables created")
+print("Databse creation initiated 1")
+create_database()
+print("Databse creation completed 2")
 
 
 """ UPLOAD IMAGE on S3 """
@@ -1500,6 +1502,6 @@ def shutdown():
 if __name__ == '__main__':
     print("Database creation initiated")
     
-    create_database()
+    # create_database()
     print("Database created")
     app.run(host='0.0.0.0')

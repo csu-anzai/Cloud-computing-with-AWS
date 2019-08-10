@@ -28,7 +28,14 @@ jobs:
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             mkdir -p codedeploy_artifact
             cd webapp && zip -r ~/webapp.zip *
-            mv webapp.zip codedeploy_artifact/ 
+            mv webapp.zip codedeploy_artifact/
+            cd codedeploy_artifact
+            ls -al
+            pwd
+            cd ..
+            pwd
+            ls -al
+ 
       - run:
           name: list directory
           command: |
@@ -38,7 +45,6 @@ jobs:
           command: |
             echo "Hello"
             ls -al
-            cd .. && ls -al
             aws s3 sync codedeploy_artifact s3://$s3_bucket_name
             echo "Uploaded to s3"
       - run:

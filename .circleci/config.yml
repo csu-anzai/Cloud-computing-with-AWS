@@ -28,7 +28,6 @@ jobs:
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             mkdir -p codedeploy_artifact
             cd webapp && zip -r ~/webapp.zip *
-            cd .. && ls -al
             mv webapp.zip codedeploy_artifact/ 
       - run:
           name: list directory

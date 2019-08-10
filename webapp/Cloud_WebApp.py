@@ -145,7 +145,7 @@ except Error as e:
 
 """ Create tables in Database """
 def create_database():
-    logger.info("Databse creation method initiated")
+    print("Databse creation method initiated")
     print("db", db)
     # conn = connection.connect()
 
@@ -432,7 +432,7 @@ def register_book():
                         conn = db.connect()
                         cur = conn.cursor()
 
-                        cur.execute("INSERT INTO Books(id, title, author, quantity, isbn) VALUES(uuid(), %s, %s, %s, %s)", (title, author, quantity, isbn))
+                        cur.execute("INSERT INTO Books(id, title, author, quantity, isbn, timeofcreation) VALUES(uuid(), %s, %s, %s, %s, %s)", (title, author, quantity, isbn, ))
 
                         conn.commit()
                         cur.close()
@@ -1498,7 +1498,8 @@ def shutdown():
 
 """ RUN FLASK APP """
 if __name__ == '__main__':
-    logger.info("Database creation initiated")
+    print("Database creation initiated")
+    
     create_database()
-    logger.info("Database created")
+    print("Database created")
     app.run(host='0.0.0.0')

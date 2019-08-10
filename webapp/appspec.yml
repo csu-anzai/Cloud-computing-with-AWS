@@ -20,7 +20,3 @@ hooks:
     - location: cdScripts/startApp.sh
       timeout: 600
       runas: centos
-  ApplicationStop:
-    - location: cdScripts/stopApp.sh
-      timeout: 600
-      runas: centos

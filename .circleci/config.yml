@@ -27,9 +27,9 @@ jobs:
           command: |
             echo "Hello the current build number is ${CIRCLE_BUILD_NUM}"
             mkdir -p codedeploy_artifact
-            cd webapp && zip -r ~/webapp.zip *
+            cd webapp && zip -r ~/webapp-${CIRCLE_BUILD_NUM}.zip *
             cd ..   
-            mv ~/webapp.zip codedeploy_artifact/
+            mv ~/webapp-${CIRCLE_BUILD_NUM}.zip codedeploy_artifact/
             cd codedeploy_artifact
             ls -al
             pwd

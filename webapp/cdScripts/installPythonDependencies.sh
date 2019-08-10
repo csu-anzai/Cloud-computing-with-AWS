@@ -3,6 +3,7 @@ sudo chown centos:centos /home/centos/deploy/webapp
 sudo chown -R centos:centos /home/centos/deploy/webapp/*
 
 sudo semanage permissive -a httpd_t
+setsebool -P httpd_can_network_connect true
 sudo scl enable rh-python36 "virtualenv /home/centos/deploy/webapp/ccwebappenv"
 
 sudo scl enable rh-python36 "source /home/centos/deploy/webapp/ccwebappenv/bin/activate"

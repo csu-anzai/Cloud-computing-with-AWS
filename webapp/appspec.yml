@@ -6,7 +6,7 @@ files:
     destination: /home/centos/deploy
 hooks:
   BeforeInstall:
-    - location: cdScripts/clean_server.sh
+    - location: cdScripts/cleanServer.sh
       timeout: 600
       runas: centos
   AfterInstall:

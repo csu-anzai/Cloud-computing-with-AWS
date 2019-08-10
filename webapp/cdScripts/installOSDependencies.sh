@@ -2,11 +2,11 @@
 
 sudo gpasswd -a centos wheel
 
-sudo cp /home/centos/deploy/webapp/cdScripts/cloud.service /etc/systemd/system/cloud.service
-sudo cp /home/centos/deploy/webapp/cdScripts/nginx.conf /etc/nginx/nginx.conf
+sudo cp /home/centos/deploy/cdScripts/cloud.service /etc/systemd/system/cloud.service
+sudo cp /home/centos/deploy/cdScripts/nginx.conf /etc/nginx/nginx.conf
 
-sudo cp -rf /home/centos/deploy/webapp/cdScripts/amazon-cloudwatch-agent.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
-sudo cp -rf /home/centos/deploy/webapp/cdScripts/selinux /etc/sysconfig/selinux
+sudo cp -rf /home/centos/deploy/cdScripts/amazon-cloudwatch-agent.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+sudo cp -rf /home/centos/deploy/cdScripts/selinux /etc/sysconfig/selinux
 sudo setenforce 0
 sudo mkdir /etc/systemd/system/nginx.service.d
 printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" | \

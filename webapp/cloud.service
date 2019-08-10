@@ -7,7 +7,7 @@ User=centos
 Group=nginx
 WorkingDirectory=/home/centos/deploy
 Environment="PATH=/home/centos/deploy/ccwebappenv/bin"
-ExecStart=/home/centos/deploy/ccwebappenv/bin/uwsgi --ini cloud.ini
+ExecStart=/home/centos/deploy/ccwebappenv/bin/uwsgi --ini /home/centos/deploy/cloud.ini
 
 [Install]
 WantedBy=multi-user.target

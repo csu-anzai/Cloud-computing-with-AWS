@@ -13,3 +13,4 @@ sudo chown centos:centos /home/centos/webapp/ccwebappenv/*
 sudo scl enable rh-python36 "source /home/centos/deploy/webapp/ccwebappenv/bin/activate"
 sudo scl enable rh-python36 "pip install uwsgi flask"
 sudo scl enable rh-python36 "pip insatll Flask_Ext"
+sudo scl enable rh-python36 "pip install mysql-connector-python"

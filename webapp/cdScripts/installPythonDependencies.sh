@@ -9,9 +9,9 @@ sudo scl enable rh-python36 "virtualenv /home/centos/deploy/ccwebappenv"
 sudo scl enable rh-python36 "source /home/centos/deploy/ccwebappenv/bin/activate"
 sudo scl enable rh-python36 "pip install -r /home/centos/deploy/requirements.txt" 
 
-sudo chown centos:centos /home/centos/ccwebappenv/
-sudo chown centos:centos /home/centos/ccwebappenv/*
+sudo chown centos:centos /home/centos/deploy/ccwebappenv/
+sudo chown centos:centos /home/centos/deploy/ccwebappenv/*
 sudo scl enable rh-python36 "source /home/centos/deploy/ccwebappenv/bin/activate"
 sudo scl enable rh-python36 "pip install uwsgi flask"
-sudo scl enable rh-python36 "pip insatll Flask_Ext"
+sudo scl enable rh-python36 "pip install Flask_Ext"
 sudo scl enable rh-python36 "pip install mysql-connector-python"

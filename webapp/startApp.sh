@@ -1,5 +1,7 @@
 #!/bin/bash
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+sudo cp /home/centos/deploy/cloud.service /etc/systemd/system/cloud.service
+sudo cp /home/centos/deploy/nginx.conf /etc/nginx/nginx.conf
 sudo setenforce 0
 sudo systemctl daemon-reload
 sudo systemctl start cloud

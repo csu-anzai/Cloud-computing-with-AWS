@@ -7,6 +7,7 @@ sudo cp /home/centos/deploy/webapp/cdScripts/nginx.conf /etc/nginx/nginx.conf
 
 sudo cp -rf /home/centos/deploy/webapp/cdScripts/amazon-cloudwatch-agent.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 sudo cp -rf /home/centos/deploy/webapp/cdScripts/selinux /etc/sysconfig/selinux
+sudo reboot
 sudo mkdir /etc/systemd/system/nginx.service.d
 printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" | \
     sudo tee /etc/systemd/system/nginx.service.d/override.conf

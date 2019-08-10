@@ -1,0 +1,13 @@
+[Unit]
+Description=uWSGI instance to serve cloud
+After=network.target
+
+[Service]
+User=centos
+Group=nginx
+WorkingDirectory=/home/centos/deploy/webapp
+Environment="PATH=/home/centos/deploy/webapp/ccwebappenv/bin"
+ExecStart=/home/centos/deploy/webapp/ccwebappenv/bin/uwsgi --ini cloud.ini
+
+[Install]
+WantedBy=multi-user.target

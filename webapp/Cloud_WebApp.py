@@ -261,70 +261,70 @@ def register_user():
     #     logger.error("Error: ", e)
     #     return jsonify("Bad request one"), 400
     try:
-        request.get_json():
-        logger.info("Json input given")
-    except Exception as e:
-        logger.info("No json input given")
+        if not request.content_type == 'application/json':
+            return jsonify('failed', 'Content-type must be application/json', 401)
+    # except Exception as e:
+    #     logger.info("No json input given")
         # return jsonify("No json input"), 400
 
-    try:
-        email = request.json.get('username')
-        print("email : ",email)
-        if not email:
-            logger.error("Email not found")
-            return jsonify("Email not found"), 400
+        try:
+            email = request.json.get('username')
+            print("email : ",email)
+            if not email:
+                logger.error("Email not found")
+                return jsonify("Email not found"), 400
 
-        """ VERIFY EMAIL """
-        is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
-        if not is_valid:
-            logger.error("Invalid email format")
-            return jsonify("Bad email request"), 400
+            """ VERIFY EMAIL """
+            is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
+            if not is_valid:
+                logger.error("Invalid email format")
+                return jsonify("Bad email request"), 400
 
-        """ VERIFY PASSWORD """
-        myPassword = request.json.get('password')
-        if not myPassword:
-            logger.error("Password not found")
-            return jsonify("Bad password"), 400
+            """ VERIFY PASSWORD """
+            myPassword = request.json.get('password')
+            if not myPassword:
+                logger.error("Password not found")
+                return jsonify("Bad password"), 400
 
-        """ CHECKING STRENGTH OF PASSWORD """
-        if policy.test(myPassword):
-            logger.error("Password not strong enough")
-            return jsonify("Password not strong enough"), 400
+            """ CHECKING STRENGTH OF PASSWORD """
+            if policy.test(myPassword):
+                logger.error("Password not strong enough")
+                return jsonify("Password not strong enough"), 400
 
-        """ HASHING PASSWORD """
-        password = bcrypt.hashpw(myPassword.encode('utf-8'), salt)
-        logger.info("Password encrypted")
+            """ HASHING PASSWORD """
+            password = bcrypt.hashpw(myPassword.encode('utf-8'), salt)
+            logger.info("Password encrypted")
 
-        """ CHECK IF USER EXISITS """
-        conn = db.connect()
-        logger.info("Connecting to database")
-        cur = conn.cursor()
-        logger.info("Creating cursor for database")
+            """ CHECK IF USER EXISITS """
+            conn = db.connect()
+            logger.info("Connecting to database")
+            cur = conn.cursor()
+            logger.info("Creating cursor for database")
 
-        cur.execute("SELECT * FROM Person where username=%s", email)
-        logger.info("Fetching user details from database")
-        user = cur.fetchone()
+            cur.execute("SELECT * FROM Person where username=%s", email)
+            logger.info("Fetching user details from database")
+            user = cur.fetchone()
 
-        if user is not None:
-            logger.error("user already exists")
-            return jsonify("User already exists"), 200
+            if user is not None:
+                logger.error("user already exists")
+                return jsonify("User already exists"), 200
 
 
-        """ ADDING USER TO DATABASE """
-        cur.execute("INSERT INTO Person(id, username, password) VALUES (uuid(), %s, %s)", (email, password))
-        logger.info("User registration successful")
+            """ ADDING USER TO DATABASE """
+            cur.execute("INSERT INTO Person(id, username, password) VALUES (uuid(), %s, %s)", (email, password))
+            logger.info("User registration successful")
 
-        conn.commit()
-        cur.close()
-        logger.info("Database connection closed")
-        c.incr("user_created")
-        return jsonify('User registered successfully'), 200
+            conn.commit()
+            cur.close()
+            logger.info("Database connection closed")
+            c.incr("user_created")
+            return jsonify('User registered successfully'), 200
+        except Exception as e:
+            logger.error("Exception: ", e)
+            return jsonify(e), 500
     except Exception as e:
         logger.error("Exception: ", e)
-        return jsonify(e), 500
-    # except Exception as e:
-    #     logger.error("Exception: ", e)
-    #     return jsonify(e), 400
+        return jsonify(e), 400
 
 
 

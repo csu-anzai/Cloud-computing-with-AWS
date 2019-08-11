@@ -373,9 +373,9 @@ def register_book():
     try:
         """ AUTHENTICATE BY TOKEN """
         if not request.authorization:
-        logger.error("Email or password not entered")
-        c.incr("index_invalid_login")
-        return jsonify("Unauthorized"), 401
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
+            return jsonify("Unauthorized"), 401
 
         username = request.authorization.username
 

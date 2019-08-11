@@ -22,6 +22,8 @@ from mysql.connector import Error
 import json
 import statsd
 from flask_statsdclient import StatsDClient
+import time
+from decimal import Decimal
 
 """ Config parser """
 config = configparser.ConfigParser()

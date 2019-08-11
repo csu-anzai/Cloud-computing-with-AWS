@@ -246,6 +246,7 @@ def presignedUrl( filename ):
 def register_user():
     c.incr("register_user")
     logger.info("Registering for user")
+    create_database()
     try:
         request.get_json()
     except Exception as e:
@@ -321,7 +322,7 @@ def register_user():
 def index():
     c.incr("index")
     logger.info("User request auth")
-    
+    create_database()
     """ VERIFYING BASIC AUTH """
     if not request.authorization:
         logger.error("Email or password not entered")
@@ -1502,6 +1503,6 @@ def shutdown():
 if __name__ == '__main__':
     print("Database creation initiated")
     
-    create_database()
+ #   create_database()
     print("Database created")
     app.run(host='0.0.0.0')

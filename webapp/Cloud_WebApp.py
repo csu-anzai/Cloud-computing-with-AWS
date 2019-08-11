@@ -372,53 +372,37 @@ def register_book():
     logger.info("In api for registering book")
     try:
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get("Authorization"):
-            logger.error("No token available for authentication")
-            c.incr("register_book_invalid_login")
-            return jsonify("Unauthorized"), 401
+        if not request.authorization:
+        logger.error("Email or password not entered")
+        c.incr("index_invalid_login")
+        return jsonify("Unauthorized"), 401
 
-        myHeader = request.headers["Authorization"]
+        username = request.authorization.username
 
-        if (myHeader == None):
-            logger.error("Authorization headers unavailable")
-            c.incr("register_book_invalid_login")
-            return jsonify("Unauthorized"), 401
-
-        try:
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("register_book_invalid_login")
-            return jsonify("Bad headers"), 401
-        print("header data dict: ", dataDict)
-
-        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
         conn = db.connect()
         cur = conn.cursor()
-
-        cur.execute("SELECT username, password FROM Person where username=%s", dataDict["username"])
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        logger.info("Fetching user from database")
-        print("user : ", user)
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            logger.error("User not found")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
         userData["username"] = user[0]
         userData["password"] = user[1]
 
-        """ VERIFY USER """
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
-            logger.info("User verified")
-            if not request.json:
-                logger.error("Book details not entered in proper format")
-                c.incr("register_book_improper_format")
-                return jsonify("Bad request"), 400
+
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
+            # return jsonify(str(datetime.datetime.now())), 200
+
+            
             try:
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
                 logger.info("Obtaining book data")

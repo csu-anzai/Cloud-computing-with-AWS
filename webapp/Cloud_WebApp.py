@@ -439,13 +439,19 @@ def register_book():
                         conn = db.connect()
                         cur = conn.cursor()
 
-                        cur.execute("INSERT INTO Books(id, title, author, quantity, isbn, timeofcreation) VALUES(uuid(), %s, %s, %s, %s, %s)", (title, author, quantity, isbn, ))
+                        timeofcreation = get_current_time()
+                        logger.info("timefocreation : %s", timeofcreation)
+                        logger.info("retu=iening info")
+                        cur.execute("INSERT INTO Books(id, title, author, quantity, isbn, timeofcreation) VALUES(uuid(), %s, %s, %s, %s, %s)", (title, author, quantity, isbn, timeofcreation))
+                        logger.info("query executed")
+                        conn.commit()
+                        logger.info("Book created in database")
 
                         conn.commit()
                         cur.close()
                         logger.info("Book created in database")
                         c.incr("book_registered")
-                        return jsonify("Posted"), 200
+                        # return jsonify("Posted"), 200
 
 
                 """ DISPLAY BOOK DETAILS """
@@ -1486,7 +1492,221 @@ def delete_image(id, imgId):
         logger.error("Exception in deleting book image: ", e)
         c.incr("delete_image_invalid_login")
         return jsonify("Unauthorized"), 401
+#Parameters for sending email
+SUBJECT = "Reset password"
+DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
+newDomain = DOMAIN_NAME.rstrip(".")
+SENDER = newDomain
 
+
+def generate_reset_Link(domain_name, email, token):
+    resetLink = "https://noreply@"+domain_name+"/reset@email="+email+"&token="+token
+    return resetLink
+
+def send_Email(email, resetLink):
+    logger.info("Sending email to SNS")
+    try:  
+        client = boto3.client('ses',region_name='us-east-1')
+        print("sending email client created")
+        client.send_email(
+            Source = SENDER,
+            Destination = {
+                'ToAddresses': [
+                    email
+                ]
+            },
+            Message = {
+                'Subject': {
+                    'Data': SUBJECT
+                },
+                'Body': {
+                    'Html': {
+                        'Data': '<html><head>'
+                        + '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+                        + '<title>' + SUBJECT + '</title>'
+                        + '</head><body>'
+                        + 'Please <a href="' + resetLink + '">click here to reset your email address</a> or copy & paste the following link in a browser:'
+                        + '<br><br>'
+                        + '<a href="' + resetLink + '">' + resetLink + '</a>'
+                        + '</body></html>'
+                    }
+                }
+            })
+        print("Client is sending email")
+    
+        c.incr('api.passwordReset.POST.200')
+        return jsonify({"message": " : you will receive password reset link if the email address exists in our system"})
+    except Exception as e:
+        print("Exception oin sending email: ", e)
+        c.incr('api.passwordReset.POST.400')
+        return jsonify({"message": " : you will receive password reset link if the email address exists in our system"})
+
+def generate_uuid():
+    ur_uuid = uuid.uuid4()
+    print("My weird string:", ur_uuid)
+    print("My weird strings type:", ur_uuid)
+    return str(ur_uuid)
+
+def generate_time_for_dynamoDB():
+    logger.info("Getting time for dynamodb")
+    dynamotime = Decimal(time.time() + 900)
+    logger.info("Got dynamo time: %s", dynamotime)
+    return dynamotime
+
+def get_current_time():
+    logger.info("Getting current time")
+    try:
+        ctime = Decimal(time.time())
+        logger.info("Got current time: %s", ctime)
+        return ctime
+    except Exception as e:
+        logger.error("Exception is %s", e)
+        return time.time()
+
+
+def get_record_from_dynamodb(table, email):
+    logger.info("get records from dynamo: %s ,%s", table, email)
+    response = table.get_item(
+        
+            Key={
+
+                'id':email
+            }
+        )
+    return response
+
+def put_record_in_dynamodb(table, email, myuuid, expiryTime):
+    response = table.put_item(
+        Item={
+
+        "id": email,
+        "token": myuuid,
+        "ttlDynamo":expiryTime
+
+        })
+    return response
+
+def get_record_details(email):
+    logger.info("getting token from dynamodb...")
+
+    # Get the service resource.
+    dynamodb = boto3.resource('dynamodb', region_name=aws_region)
+    print("Dynamo db client created")
+
+    table = dynamodb.Table('csye6225')
+    print("Dynamo db table is:", table)
+
+    try:
+        #get record exists in dynamodb
+        response = get_record_from_dynamodb(table, email)
+        print("First get response: ", response)
+
+        for (key, value) in response.items():
+       # Check if key is even then add pair to new dictionary
+            if key == "Item":
+                item = response['Item']
+                ttlTimeInDynamoDB = item['ttlDynamo']
+                currentTime = get_current_time()
+
+                print("ttlTimeInDynamoDB : ", ttlTimeInDynamoDB)
+                print("currentTime : ", currentTime)
+
+                if currentTime > ttlTimeInDynamoDB:
+                    resDict = {}
+                    resDict['msg'] = "Send email"
+                    resDict['details'] = item
+                    # resJson = json.dumps(resDict, indent=4)
+                    print("resJson = ", resDict)
+                else:
+                    resDict = {}
+                    resDict['msg'] = "Do not send email"
+                    resDict['details'] = ""
+                    # resJson = json.dumps(resDict)
+                    print("resJson = ", resDict)
+                
+                return resDict
+            else:
+                output = "None returmed"
+                myUuid = generate_uuid()
+                expiryTime = generate_time_for_dynamoDB()
+
+                put_record_in_dynamodb(table, email, myUuid, expiryTime)
+                
+                newRes = get_record_from_dynamodb(table, email)
+                print("New response:", newRes)
+
+                for (key, value) in newRes.items():
+               # Check if key is even then add pair to new dictionary
+                    if key == "Item":
+                        item = newRes['Item']
+                        print("GetItem succeeded:")
+                        print(item)
+                        resDict = {}
+                        resDict['msg'] = "Send email"
+                        resDict['details'] = item
+                        # print("else dumps")
+                        # resJson = json.dumps(resDict)
+                        print("resJson = ", resDict)
+
+                        return resDict
+        # return item
+
+    except ClientError as e:
+        print(e.response['Error']['Message'])
+
+
+@app.route("/reset", methods=["POST"])
+def reset_password():
+    c.incr('api.passwordReset')
+    email=request.json.get("username")
+    print("username: ",email)
+
+    #Get emailId and verify if it exists in db
+    if (email == ""):
+        logger.debug("email is empty")
+        return JsonResponse({'message': 'Email cant be empty'}, status=400)
+    
+    #verrsify if username is valid
+    email_status = verifyUsername(str(email))
+
+    try:
+        conn = db.connect()
+        cur = conn.cursor()
+
+        cur.execute("select * from Person where username=%s", email)
+        user = cur.fetchone()
+
+        if email_status is not None:
+            if user:
+                respDict = get_record_details(email)
+                # respJson = json.loads(respDict)
+
+                # print("response msg : ",respJson)
+                # print("response msg : ",respJson['msg'])
+                responseMsg = respDict['msg']
+                responseDetails = respDict['details']
+
+                if responseMsg == "Send email":
+
+                        print("My token is",responseDetails['token'])
+                        token = responseDetails['token']
+
+                        #generate password reset link
+                        resetLink = generate_reset_Link(newDomain, email, token)
+                        print("Reset link is:", resetLink)
+
+                        #send email
+                        send_Email(email, resetLink)
+
+                        return jsonify("Email sent successfully"), 200
+                else:
+                    return jsonify("Check email for password reset"), 200  
+            else:
+                return jsonify ("User does not exist"), 400
+        else:
+            return jsonify("Invalid userId"), 400
+    except Error as e:
+        return jsonify(e), 400
 
 def allowed_file(filename):
     return '.' in filename and \

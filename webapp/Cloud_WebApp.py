@@ -537,7 +537,7 @@ def request_a_book(id):
             cur.close()
             logger.info("User authenticated")
             c.incr("index_valid_login")
-        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
+            """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
             conn = db.connect()
             cur = conn.cursor()
             cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])

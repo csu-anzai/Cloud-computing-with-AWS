@@ -107,6 +107,7 @@ logging.config.dictConfig({
 })
 
 logger = logging.getLogger(__name__)
+# logger = logging.getLogger(app)
 logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
@@ -253,21 +254,21 @@ def register_user():
         logger.error("Auth headers found")
         c.incr("index_invalid_login")
         return jsonify("Auth headers found, cannot register"), 401
-    try:
-        request.get_json()
-    except Exception as e:
-        logger.error("Error: ", e)
-        return jsonify("Bad request one"), 400
+    # try:
+    #     request.get_json()
+    # except Exception as e:
+    #     logger.error("Error: ", e)
+    #     return jsonify("Bad request one"), 400
     try:
         if not request.get_json():
-            logger.error("Json format error")
-            return jsonify("Bad request two"), 400
+            logger.error("No json input")
+            return jsonify("No json input"), 400
         try:
             email = request.json.get('username')
             print("email : ",email)
             if not email:
                 logger.error("Email not found")
-                return jsonify("Bad request"), 400
+                return jsonify("Email not found"), 400
 
             """ VERIFY EMAIL """
             is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
@@ -279,7 +280,7 @@ def register_user():
             myPassword = request.json.get('password')
             if not myPassword:
                 logger.error("Password not found")
-                return jsonify("Bad request"), 400
+                return jsonify("Bad password"), 400
 
             """ CHECKING STRENGTH OF PASSWORD """
             if policy.test(myPassword):
@@ -410,54 +411,67 @@ def register_book():
                 logger.info("Obtaining book data")
 
                 book_data = request.get_json()
+                logger.info("bookdata : %s", book_data)
+
                 image_data = book_data['image']
+                logger.info("imagedata  : %s", image_data)
+
                 
                 title = book_data['title']
                 author = book_data['author']
                 isbn = book_data['isbn']
                 quantity = book_data['quantity']
-        
+                logger.info(" title : %s",title)
+                logger.info(" author : %s",author)
+                logger.info(" isbn : %s",isbn)
+
                 book_id = image_data['id']
                 url = image_data['url']
+                logger.info(" book_id : %s", book_id)
 
                 if not url:
                     if not book_id:
+                        logger.info("no image deatilis")
                         conn = db.connect()
                         cur = conn.cursor()
+                        try:
 
-                        timeofcreation = get_current_time()
-                        logger.info("timefocreation : %s", timeofcreation)
-                        logger.info("retu=iening info")
-                        cur.execute("INSERT INTO Books(id, title, author, quantity, isbn, timeofcreation) VALUES(uuid(), %s, %s, %s, %s, %s)", (title, author, quantity, isbn, timeofcreation))
-                        logger.info("query executed")
-                        conn.commit()
-                        logger.info("Book created in database")
+                            timeofcreation = get_current_time()
+                            logger.info("timefocreation : %s", timeofcreation)
+                            logger.info("retu=iening info")
+                            cur.execute("INSERT INTO Books(id, title, author, quantity, isbn, timeofcreation) VALUES(uuid(), %s, %s, %s, %s, %s)", (title, author, quantity, isbn, timeofcreation))
+                            logger.info("query executed")
+                            conn.commit()
+                            logger.info("Book created in database")
 
-                        conn.commit()
-                        cur.close()
-                        logger.info("Book created in database")
-                        c.incr("book_registered")
-                        # return jsonify("Posted"), 200
+                            cur.execute("SELECT * FROM Books order by timeofcreation desc")
+                            book = cur.fetchone()
+                            
+                            cur.close()
+                           
+                            c.incr("book_registered")
+                            # return jsonify("Posted"), 200
+                        except Exception as e:
+                            logger.error("Exception in book register: %s", e)
+                            return "Not posted"
 
+                        
 
                 """ DISPLAY BOOK DETAILS """
                 bookData = {}
-                print(bookData)
-                bookData["id"] = test.id
-                bookData["id"]
-                bookData["title"] = test.title
-                bookData["author"] = test.author
-                bookData["isbn"] = test.isbn
-                bookData["quantity"] = test.quantity
+                print("book retrieved from db :", book)
+                bookData["id"] = book[0]
+                bookData["title"] = book[1]
+                bookData["author"] = book[2]
+                bookData["isbn"] = book[3]
+                bookData["quantity"] = book[4]
                 bookData['Image'] = ''
                 json1 = json.dumps(bookData, indent=4)
-                logger.info("Fetching book details")
 
                 image_array = {}
-                image_array['book_id'] = img_set.book_id
+                image_array['book_id'] = ""
+                image_array['url'] = ""
                 print("Image data for json", image_array)
-                image_array['url'] = img_set.url
-                logger.info("Fetching image details")
 
                 json2 = json.dumps(image_array, indent=4)
                 print(json2)
@@ -465,7 +479,6 @@ def register_book():
                 print (resUm)
                 resUm['Image'] = json.loads(json2)
                 print("no ans")
-                logger.info("Book with image details obtained")
                 return json.dumps(resUm, indent=4), 200
             except Exception as e:
                 logger.error("Exception in fetching book details: ", e)
@@ -1048,7 +1061,7 @@ def upload_image(id):
                     # upload_on_s3
                     print("My filename", filename)
                     logger.info("Saving file to folder")
-                    file.save(os.path.join(UPLOAD_FOLDER, filename))
+                    # file.save(os.path.join(UPLOAD_FOLDER, filename))
                     logger.info("File saved to folder")
                     # print(app.config['UPLOAD_FOLDER'])
                     # file.save(filename)

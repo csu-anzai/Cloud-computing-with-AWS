@@ -5,6 +5,7 @@ jobs:
       only:
         - trial
         - CloudWatch
+        - cw2
     docker:
       - image: circleci/python:3.6-jessie
     steps:

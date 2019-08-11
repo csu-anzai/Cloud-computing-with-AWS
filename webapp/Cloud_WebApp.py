@@ -509,107 +509,113 @@ def request_a_book(id):
         logger.info("Book id obtained from header")
 
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get('Authorization'):
-            logger.error("Headers unavailable")
-            c.incr("request_a_book_invalid_login")
+        if not request.authorization:
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
-        """ OBTAIN HEADER """
-        myHeader = request.headers["Authorization"]
-        if (myHeader == None):
-            logger.error("Headers unavailable")
-            c.incr("request_a_book_invalid_login")
-            return jsonify("Unauthorized"), 401
+        username = request.authorization.username
 
-
-        try:
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("request_a_book_invalid_login")
-            return jsonify("Bad headers"), 401
-        print(dataDict)
-        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
         conn = db.connect()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            logger.error("User not available in database")
-            c.incr("request_a_book_invalid_login")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[1]
-        userData["password"] = user[2]
+        userData["username"] = user[0]
+        userData["password"] = user[1]
 
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
-            """ OBTAIN BOOK BY ID """
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
+            # return jsonify(str(datetime.datetime.now())), 200
+        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
             conn = db.connect()
             cur = conn.cursor()
+            cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+            user = cur.fetchone()
 
-            cur.execute("SELECT id, title, author, isbn, quantity FROM Books where id=%s", bookId)
-            book = cur.fetchone()
+            if not user:
+                logger.error("User not available in database")
+                c.incr("request_a_book_invalid_login")
+                return jsonify("Unauthorized"), 401
 
-            if (book == None):
-                logger.error("Book not available in database")
-                c.incr("request_a_book_not_found")
-                return jsonify("Not found"), 404
+            userData = {}
+            userData["username"] = user[1]
+            userData["password"] = user[2]
+
+            if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+                """ OBTAIN BOOK BY ID """
+                conn = db.connect()
+                cur = conn.cursor()
+
+                cur.execute("SELECT id, title, author, isbn, quantity FROM Books where id=%s", bookId)
+                book = cur.fetchone()
+
+                if (book == None):
+                    logger.error("Book not available in database")
+                    c.incr("request_a_book_not_found")
+                    return jsonify("Not found"), 404
 
 
-            cur.execute("SELECT id, url FROM Image where book_id=%s", bookId)
-            image = cur.fetchone()
+                cur.execute("SELECT id, url FROM Image where book_id=%s", bookId)
+                image = cur.fetchone()
 
-            if image:
-                logger.info("Image obtained for book")
-                bookData = {}
-                bookData["id"] = book[0]
-                bookData["title"] = book[1]
-                bookData["author"] = book[2]
-                bookData["isbn"] = book[3]
-                bookData["quantity"] = book[4]
-                bookData['Image'] = ''
-                json1 = json.dumps(bookData, indent=4)
+                if image:
+                    logger.info("Image obtained for book")
+                    bookData = {}
+                    bookData["id"] = book[0]
+                    bookData["title"] = book[1]
+                    bookData["author"] = book[2]
+                    bookData["isbn"] = book[3]
+                    bookData["quantity"] = book[4]
+                    bookData['Image'] = ''
+                    json1 = json.dumps(bookData, indent=4)
 
-                image_array = {}
-                image_array['id'] = image[0]
-                image_array['url'] = image[1]
+                    image_array = {}
+                    image_array['id'] = image[0]
+                    image_array['url'] = image[1]
 
-                json2 = json.dumps(image_array, indent=4)
-                resUm = json.loads(json1)
-                
-                resUm['Image'] = json.loads(json2)
-                return json.dumps(resUm, indent=4), 200
-            else:
-                logger.info("Fetching book details")
-                bookData = {}
-                bookData["id"] = book[0]
-                bookData["title"] = book[1]
-                bookData["author"] = book[2]
-                bookData["isbn"] = book[3]
-                bookData["quantity"] = book[4]
-                bookData['Image'] = ''
-                json1 = json.dumps(bookData, indent=4)
+                    json2 = json.dumps(image_array, indent=4)
+                    resUm = json.loads(json1)
+                    
+                    resUm['Image'] = json.loads(json2)
+                    return json.dumps(resUm, indent=4), 200
+                else:
+                    logger.info("Fetching book details")
+                    bookData = {}
+                    bookData["id"] = book[0]
+                    bookData["title"] = book[1]
+                    bookData["author"] = book[2]
+                    bookData["isbn"] = book[3]
+                    bookData["quantity"] = book[4]
+                    bookData['Image'] = ''
+                    json1 = json.dumps(bookData, indent=4)
 
-                image_array = {}
-                image_array['id'] = ''
-                image_array['url'] = ''
+                    image_array = {}
+                    image_array['id'] = ''
+                    image_array['url'] = ''
 
-                json2 = json.dumps(image_array, indent=4)
-                resUm = json.loads(json1)
+                    json2 = json.dumps(image_array, indent=4)
+                    resUm = json.loads(json1)
 
-                resUm['Image'] = json.loads(json2)
-                logger.info("Book available to user")
-                c.incr("request_a_book_success")
-                return json.dumps(resUm, indent=4), 200
-        logger.error("User not authenticated")
-        c.incr("request_a_book_fail")
-        return jsonify("Unauthorized"), 401
+                    resUm['Image'] = json.loads(json2)
+                    logger.info("Book available to user")
+                    c.incr("request_a_book_success")
+                    return json.dumps(resUm, indent=4), 200
+            logger.error("User not authenticated")
+            c.incr("request_a_book_fail")
+            return jsonify("Unauthorized"), 401
     except Exception as e:
         print("in exception")
         logger.error("Exception in fetching book by id: ", e)

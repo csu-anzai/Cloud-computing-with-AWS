@@ -247,6 +247,10 @@ def register_user():
     c.incr("register_user")
     logger.info("Registering for user")
     create_database()
+    if request.authorization:
+        logger.error("Auth headers found")
+        c.incr("index_invalid_login")
+        return jsonify("Auth headers found, cannot register"), 401
     try:
         request.get_json()
     except Exception as e:

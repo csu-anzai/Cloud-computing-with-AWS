@@ -537,7 +537,6 @@ def request_a_book(id):
             cur.close()
             logger.info("User authenticated")
             c.incr("index_valid_login")
-            # return jsonify(str(datetime.datetime.now())), 200
         """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
             conn = db.connect()
             cur = conn.cursor()

@@ -1,0 +1,26 @@
+version: 0.0
+
+os: linux
+files:
+  - source: /
+    destination: /home/centos/deploy
+hooks:
+  BeforeInstall:
+    - location: cleanServer.sh
+      timeout: 600
+      runas: centos
+  AfterInstall:
+    - location: installOSDependencies.sh
+      timeout: 600
+      runas: centos
+    - location: installPythonDependencies.sh
+      timeout: 600
+      runas: centos
+  ApplicationStart:
+    - location: startApp.sh
+      timeout: 600
+      runas: centos
+  ApplicationStop:
+    - location: stopApp.sh
+      timeout: 600
+      runas: centos

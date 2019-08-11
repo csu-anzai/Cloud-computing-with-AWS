@@ -112,7 +112,7 @@ logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
 # UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
-UPLOAD_FOLDER = "/home/centos/deploy" + "Images"
+UPLOAD_FOLDER = "Images"
 
 
 ''' ALLOWED EXTENSIONS FOR UPLOAD ''' 
@@ -170,7 +170,7 @@ def create_database():
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
     logger.info("Uploading image on s3")
-    print("filename inupload: ", os.path.dirname(__file__) +  filename)
+    print("filename inupload: ", "Images/" +  filename)
 
     key_filename = filename
     print(key_filename)

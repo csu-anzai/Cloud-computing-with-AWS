@@ -112,7 +112,8 @@ logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
 # UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
-UPLOAD_FOLDER = "Images"
+# UPLOAD_FOLDER = "Images"
+UPLOAD_FOLDER = "/tmp"
 
 
 ''' ALLOWED EXTENSIONS FOR UPLOAD ''' 
@@ -170,10 +171,11 @@ def create_database():
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
     logger.info("Uploading image on s3")
-    print("filename inupload: ", "Images/" +  filename)
+    print("filename inupload: ", UPLOAD_FOLDER + filename)
 
-    key_filename = filename
-    print(key_filename)
+    key_filename = UPLOAD_FOLDER + filename
+    print("key_filename:",key_filename)
+    print("Filename:",filename)
 
     #filename = filename
 
@@ -185,8 +187,9 @@ def upload_on_s3( filename ):
 
     bucket_resource.upload_file(
         Bucket = aws_s3_bucket_name,
-        Filename=filename,
-        Key=key_filename,ExtraArgs={'ContentType': "multipart/form-data"}
+        Filename=key_filename,
+        Key=filename,
+        ExtraArgs={'ContentType': "multipart/form-data"}
     )
     print("UPLOAD SUCCESSFULL")
     logger.info("Image uploaded in s3")

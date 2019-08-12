@@ -38,6 +38,7 @@ production_run = config["Config"]['PRODUCTION_RUN']
 print(production_run)
 
 
+
 """ A password policy """
 policy = PasswordPolicy.from_names(
     length=8,
@@ -112,7 +113,8 @@ logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
 # UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
-UPLOAD_FOLDER = "Images"
+# UPLOAD_FOLDER = "Images"
+UPLOAD_FOLDER = "/tmp"
 
 
 ''' ALLOWED EXTENSIONS FOR UPLOAD ''' 
@@ -170,10 +172,13 @@ def create_database():
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
     logger.info("Uploading image on s3")
-    print("filename inupload: ", "Images/" +  filename)
+    s3_dir = os.mkdir(os.path.join(['tmp']))
+    print("S3 directory:", s3_dir)
+    print("filename inupload: ", os.path.join(s3_dir, filename))
 
-    key_filename = filename
-    print(key_filename)
+    key_filename = os.path.join(s3_dir, filename)
+    print("key_filename:",key_filename)
+    print("Filename:",filename)
 
     #filename = filename
 
@@ -185,8 +190,9 @@ def upload_on_s3( filename ):
 
     bucket_resource.upload_file(
         Bucket = aws_s3_bucket_name,
-        Filename=filename,
-        Key=key_filename,extra_args={'ContentType': "application/json"}
+        Filename=key_filename,
+        Key=filename
+        # ExtraArgs={'ContentType': "multipart/form-data"}
     )
     print("UPLOAD SUCCESSFULL")
     logger.info("Image uploaded in s3")
@@ -634,46 +640,35 @@ def request_all_books():
     logger.info("Requesting all books")
     try:
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get('Authorization'):
-            logger.error("Authentication headers unavailable")
-            c.incr("request_all_books_invalid_login")
+        if not request.authorization:
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
-        """ OBTAIN HEADER """
-        myHeader = request.headers["Authorization"]
-        if (myHeader == None):
-            logger.info("Authentication headers unavailable")
-            c.incr("request_all_books_invalid_login")
-            return jsonify("Unauthorized"), 401
+        username = request.authorization.username
 
-        try:
-
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("request_all_books_invalid_login")
-            return jsonify("Bad headers"), 401
-        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-        # user = Person.query.filter_by(username=dataDict["username"]).first()
         conn = db.connect()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            logger.info("User unavailable in Database")
-            c.incr("request_all_books_invalid_login")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[1]
-        userData["password"] = user[2]
+        userData["username"] = user[0]
+        userData["password"] = user[1]
 
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            # cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
+            # return jsonify(str(datetime.datetime.now())), 200
 
             cur.execute("SELECT * FROM Books")
             books = cur.fetchall()
@@ -780,49 +775,35 @@ def update_book():
     logger.info("api for updating book")
     try:
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get('Authorization'):
-            logger.error("headers unavailable")
-            c.incr("update_book_invalid_login")
+        if not request.authorization:
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
-        """ OBTAIN HEADERS """
-        myHeader = request.headers["Authorization"]
-
-        """ DECODE TOKEN """
-        try:
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("update_book_invalid_login")
-            return jsonify("Bad headers"), 401
+        username = request.authorization.username
 
         conn = db.connect()
         cur = conn.cursor()
-
-        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        logger.info("User fetched from Database")
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            logger.error("User unavailable in database")
-            c.incr("update_book_invalid_login")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[1]
-        userData["password"] = user[2]  
+        userData["username"] = user[0]
+        userData["password"] = user[1]
 
-        print("userData: ",userData)
-        print("encode pass:", dataDict["password"].encode('utf-8'))
-        print("user pass: ", userData["password"])
 
-        """ VERIFY TOKEN """
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
-
-            print("in if")
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            # cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
+            # return jsonify(str(datetime.datetime.now())), 200
 
             """ OBTAIN BOOK ID TO COMARE IN DATABASE """
             bookId = request.json.get("id")
@@ -927,45 +908,35 @@ def delete_book(id):
     try:
         bookId = id
 
-        """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get('Authorization'):
-            logger.error("Headers unavailable")
-            c.incr("delete_book_invalid_login")
+        if not request.authorization:
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
-        """ OBTAIN HEADERS """
-        myHeader = request.headers["Authorization"]
-        
-        """ DECODE TOKEN """
-        try:
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("delete_book_invalid_login")
-            return jsonify("Bad headers"), 401
+        username = request.authorization.username
 
         conn = db.connect()
         cur = conn.cursor()
-
-        cur.execute("SELECT  * FROM Person where username=%s", dataDict["username"])
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            print("not usuer")
-            logger.info("user not registered")
-            c.incr("delete_book_invalid_login")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[1]
-        userData["password"] = user[2]
-        print("usesrData: ", userData)
+        userData["username"] = user[0]
+        userData["password"] = user[1]
 
-        """ VERIFY TOKEN """
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            # cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
+            # return jsonify(str(datetime.datetime.now())), 200
 
             cur.execute("SELECT * FROM Image where book_id=%s", bookId)
             img_set =cur.fetchone()
@@ -1014,42 +985,35 @@ def upload_image(id):
     cur = conn.cursor()
 
     """ AUTHENTICATE BY TOKEN """
-    if not request.headers.get("Authorization"):
-        logger.error("Headers unavailable")
-        c.incr("upload_image_invalid_login")
+    if not request.authorization:
+        logger.error("Email or password not entered")
+        c.incr("index_invalid_login")
         return jsonify("Unauthorized"), 401
 
-    myHeader = request.headers["Authorization"]
-    if (myHeader == None):
-        logger.error("Headers unavailable")
-        c.incr("upload_image_invalid_login")
-        return jsonify("Unauthorized"), 401
+    username = request.authorization.username
 
-    try:
-        decoded_header = base64.b64decode(myHeader)
-        decoded_header_by_utf = decoded_header.decode('utf-8')
-        dataDict = {}
-        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-    except Exception as e:
-        logger.error("Exception in bs4 decoding:", e)
-        c.incr("upload_image_invalid_login")
-        return jsonify("Bad headers"), 401
-
-
-    cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+    conn = db.connect()
+    cur = conn.cursor()
+    cur.execute("SELECT username, password FROM Person where username=%s", username)
     user = cur.fetchone()
+    print("user :", user)
 
+    """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
     if not user:
-        logger.error("User not registered")
-        c.incr("upload_image_invalid_login")
+        logger.error("User does not exist in database")
+        c.incr("index_invalid_login")
         return jsonify("Unauthorized"), 401
 
     userData = {}
-    userData["username"] = user[1]
-    userData["password"] = user[2]
+    userData["username"] = user[0]
+    userData["password"] = user[1]
 
-    """ VERIFY USER """
-    if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+    if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+        # cur.close()
+        logger.info("User authenticated")
+        c.incr("index_valid_login")
+        # return jsonify(str(datetime.datetime.now())), 200
         if not request.json:
             logger.error("bad json")
             jsonify("Bad request"), 400
@@ -1068,13 +1032,14 @@ def upload_image(id):
                     filename = secure_filename(file.filename)
                     logger.info("File type verified")
                     # upload_on_s3
-                    print("My filename", filename)
+                    print("My filename:", filename)
                     logger.info("Saving file to folder")
                     # file.save(os.path.join(UPLOAD_FOLDER, filename))
                     logger.info("File saved to folder")
                     # print(app.config['UPLOAD_FOLDER'])
                     # file.save(filename)
-                    url_for_image = os.path.join(UPLOAD_FOLDER, filename)
+                    # url_for_image = os.path.join(UPLOAD_FOLDER, filename)
+                    url_for_image = filename
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
                     bookId = id
@@ -1183,44 +1148,36 @@ def get_book_image(id, imgId):
         print("conn establised")
 
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get("Authorization"):
-            logger.error("Headers unavailable")
-            c.incr("get_book_image_invalid_login")
+        if not request.authorization:
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
-        myHeader = request.headers["Authorization"]
-        if (myHeader == None):
-            logger.info("Headers unavailable")
-            c.incr("get_book_image_invalid_login")
-            return jsonify("Unauthorized"), 401
+        username = request.authorization.username
 
-        try:
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("get_book_image_invalid_login")
-            return jsonify("Bad headers"), 401
-
-
-        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        conn = db.connect()
+        cur = conn.cursor()
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            logger.error("user not found in database")
-            c.incr("get_book_image_invalid_login")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[1]
-        userData["password"] = user[2]
+        userData["username"] = user[0]
+        userData["password"] = user[1]
 
-        """ VERIFY USER """
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
-            
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            # cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
+            # return jsonify(str(datetime.datetime.now())), 200
+            try:
                 """ OBTAIN BOOK BY ID from local db"""
                 cur.execute("SELECT * FROM Image where id=%s and book_id=%s", (imageId, bookId))
                 image = cur.fetchone()
@@ -1249,8 +1206,8 @@ def get_book_image(id, imgId):
                 logger.info("Image details displayed to user")
                 c.incr("get_book_image_success")
                 return jsonify(output),200
-
-
+            except Exception as e:
+                return jsonify(e), 401
 
             
 
@@ -1284,42 +1241,35 @@ def update_image(id, imgId):
     logger.info("Database connection establised")
 
     """ AUTHENTICATE BY TOKEN """
-    if not request.headers.get("Authorization"):
-        logger.info("Headers unavailable")
-        c.incr("update_image_invalid_login")
+    if not request.authorization:
+        logger.error("Email or password not entered")
+        c.incr("index_invalid_login")
         return jsonify("Unauthorized"), 401
 
-    myHeader = request.headers["Authorization"]
-    if (myHeader == None):
-        logger.info("Headers unavailable")
-        c.incr("update_image_invalid_login")
-        return jsonify("Unauthorized"), 401
+    username = request.authorization.username
 
-    try:
-        decoded_header = base64.b64decode(myHeader)
-        decoded_header_by_utf = decoded_header.decode('utf-8')
-
-        dataDict = {}
-        dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-    except Exception as e:
-        logger.error("Exceptio in decoding bs4: ",e)
-        c.incr("update_image_invalid_login")
-        return jsonify("Bad authorization headers"), 401
-    """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-    cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
+    conn = db.connect()
+    cur = conn.cursor()
+    cur.execute("SELECT username, password FROM Person where username=%s", username)
     user = cur.fetchone()
+    print("user :", user)
 
+    """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
     if not user:
-        logger.error("User not available in database")
-        c.incr("update_image_invalid_login")
+        logger.error("User does not exist in database")
+        c.incr("index_invalid_login")
         return jsonify("Unauthorized"), 401
 
     userData = {}
-    userData["username"] = user[1]
-    userData["password"] = user[2]
+    userData["username"] = user[0]
+    userData["password"] = user[1]
 
-    """ VERIFY USER """
-    if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+    if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+        # cur.close()
+        logger.info("User authenticated")
+        c.incr("index_valid_login")
+        # return jsonify(str(datetime.datetime.now())), 200
         if not request.json:
             logger.error("Bad json format")
             c.incr("update_image_invalid_format")
@@ -1410,52 +1360,37 @@ def delete_image(id, imgId):
         cur = conn.cursor()
 
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get("Authorization"):
-            print("no auth")
-            logger.error("Headers unavailable")
-            c.incr("delete_image_invalid_login")
+        if not request.authorization:
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
-        myHeader = request.headers["Authorization"]
-        print("headers: ", myHeader)
+        username = request.authorization.username
 
-        if (myHeader == None):
-            logger.info("Headers unavailable")
-            c.incr("delete_image_invalid_login")
-            return jsonify("Unauthorized"), 401
-
-        try:
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("delete_image_invalid_login")
-            return jsonify("Bad headers"), 401
-
-        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-        cur.execute("SELECT * FROM Person WHERE username=%s", dataDict["username"])
+        conn = db.connect()
+        cur = conn.cursor()
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user: ", user)
-        logger.info("User fetched")
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            logger.info("User not available in database")
-            c.incr("delete_image_invalid_login")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[1]
-        userData["password"] = user[2]
+        userData["username"] = user[0]
+        userData["password"] = user[1]
 
-        """ VERIFY USER """
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            # cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
             """ OBTAIN BOOK BY ID """
             # cur.execute("SELECT * FROM Books WHERE id=bookId")
             # book = cur.fetchone()
-
             cur.execute("SELECT * FROM Image WHERE id=%s", imgId)
             image = cur.fetchone()
             logger.info("Image fetched from database")
@@ -1508,6 +1443,11 @@ SENDER = newDomain
 
 
 def generate_reset_Link(domain_name, email, token):
+    #Parameters for sending email
+    SUBJECT = "Reset password"
+    DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
+    newDomain = DOMAIN_NAME.rstrip(".")
+    SENDER = newDomain
     resetLink = "https://noreply@"+domain_name+"/reset@email="+email+"&token="+token
     return resetLink
 

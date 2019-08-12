@@ -186,7 +186,7 @@ def upload_on_s3( filename ):
     bucket_resource.upload_file(
         Bucket = aws_s3_bucket_name,
         Filename=filename,
-        Key=key_filename,extra_args={'ContentType': "application/json"}
+        Key=key_filename,ExtraArgs={'ContentType': "application/json"}
     )
     print("UPLOAD SUCCESSFULL")
     logger.info("Image uploaded in s3")

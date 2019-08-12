@@ -38,6 +38,7 @@ production_run = config["Config"]['PRODUCTION_RUN']
 print(production_run)
 
 
+
 """ A password policy """
 policy = PasswordPolicy.from_names(
     length=8,
@@ -171,9 +172,11 @@ def create_database():
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
     logger.info("Uploading image on s3")
-    print("filename inupload: ", UPLOAD_FOLDER + filename)
+    s3_dir = os.mkdir(os.path.join(['tmp']))
+    print("S3 directory:", s3_dir)
+    print("filename inupload: ", os.path.join(s3_dir, filename))
 
-    key_filename = UPLOAD_FOLDER + filename
+    key_filename = os.path.join(s3_dir, filename)
     print("key_filename:",key_filename)
     print("Filename:",filename)
 
@@ -188,8 +191,8 @@ def upload_on_s3( filename ):
     bucket_resource.upload_file(
         Bucket = aws_s3_bucket_name,
         Filename=key_filename,
-        Key=filename,
-        ExtraArgs={'ContentType': "multipart/form-data"}
+        Key=filename
+        # ExtraArgs={'ContentType': "multipart/form-data"}
     )
     print("UPLOAD SUCCESSFULL")
     logger.info("Image uploaded in s3")
@@ -1071,13 +1074,14 @@ def upload_image(id):
                     filename = secure_filename(file.filename)
                     logger.info("File type verified")
                     # upload_on_s3
-                    print("My filename", filename)
+                    print("My filename:", filename)
                     logger.info("Saving file to folder")
                     # file.save(os.path.join(UPLOAD_FOLDER, filename))
                     logger.info("File saved to folder")
                     # print(app.config['UPLOAD_FOLDER'])
                     # file.save(filename)
-                    url_for_image = os.path.join(UPLOAD_FOLDER, filename)
+                    # url_for_image = os.path.join(UPLOAD_FOLDER, filename)
+                    url_for_image = filename
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
                     bookId = id

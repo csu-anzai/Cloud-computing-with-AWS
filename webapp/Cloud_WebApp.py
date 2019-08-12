@@ -107,10 +107,12 @@ logging.config.dictConfig({
 })
 
 logger = logging.getLogger(__name__)
+# logger = logging.getLogger(app)
 logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
-UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
+# UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
+UPLOAD_FOLDER = "Images"
 
 
 ''' ALLOWED EXTENSIONS FOR UPLOAD ''' 
@@ -168,7 +170,7 @@ def create_database():
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
     logger.info("Uploading image on s3")
-    print("filename inupload: ", os.path.dirname(__file__) +  filename)
+    print("filename inupload: ", "Images/" +  filename)
 
     key_filename = filename
     print(key_filename)
@@ -253,21 +255,24 @@ def register_user():
         logger.error("Auth headers found")
         c.incr("index_invalid_login")
         return jsonify("Auth headers found, cannot register"), 401
+    # try:
+    #     request.get_json()
+    # except Exception as e:
+    #     logger.error("Error: ", e)
+    #     return jsonify("Bad request one"), 400
     try:
-        request.get_json()
-    except Exception as e:
-        logger.error("Error: ", e)
-        return jsonify("Bad request one"), 400
-    try:
-        if not request.get_json():
-            logger.error("Json format error")
-            return jsonify("Bad request two"), 400
+        if not request.content_type == 'application/json':
+            return jsonify('failed', 'Content-type must be application/json', 401)
+    # except Exception as e:
+    #     logger.info("No json input given")
+        # return jsonify("No json input"), 400
+
         try:
             email = request.json.get('username')
             print("email : ",email)
             if not email:
                 logger.error("Email not found")
-                return jsonify("Bad request"), 400
+                return jsonify("Email not found"), 400
 
             """ VERIFY EMAIL """
             is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
@@ -279,7 +284,7 @@ def register_user():
             myPassword = request.json.get('password')
             if not myPassword:
                 logger.error("Password not found")
-                return jsonify("Bad request"), 400
+                return jsonify("Bad password"), 400
 
             """ CHECKING STRENGTH OF PASSWORD """
             if policy.test(myPassword):
@@ -410,54 +415,67 @@ def register_book():
                 logger.info("Obtaining book data")
 
                 book_data = request.get_json()
+                logger.info("bookdata : %s", book_data)
+
                 image_data = book_data['image']
+                logger.info("imagedata  : %s", image_data)
+
                 
                 title = book_data['title']
                 author = book_data['author']
                 isbn = book_data['isbn']
                 quantity = book_data['quantity']
-        
+                logger.info(" title : %s",title)
+                logger.info(" author : %s",author)
+                logger.info(" isbn : %s",isbn)
+
                 book_id = image_data['id']
                 url = image_data['url']
+                logger.info(" book_id : %s", book_id)
 
                 if not url:
                     if not book_id:
+                        logger.info("no image deatilis")
                         conn = db.connect()
                         cur = conn.cursor()
+                        try:
 
-                        timeofcreation = get_current_time()
-                        logger.info("timefocreation : %s", timeofcreation)
-                        logger.info("retu=iening info")
-                        cur.execute("INSERT INTO Books(id, title, author, quantity, isbn, timeofcreation) VALUES(uuid(), %s, %s, %s, %s, %s)", (title, author, quantity, isbn, timeofcreation))
-                        logger.info("query executed")
-                        conn.commit()
-                        logger.info("Book created in database")
+                            timeofcreation = get_current_time()
+                            logger.info("timefocreation : %s", timeofcreation)
+                            logger.info("retu=iening info")
+                            cur.execute("INSERT INTO Books(id, title, author, quantity, isbn, timeofcreation) VALUES(uuid(), %s, %s, %s, %s, %s)", (title, author, quantity, isbn, timeofcreation))
+                            logger.info("query executed")
+                            conn.commit()
+                            logger.info("Book created in database")
 
-                        conn.commit()
-                        cur.close()
-                        logger.info("Book created in database")
-                        c.incr("book_registered")
-                        # return jsonify("Posted"), 200
+                            cur.execute("SELECT * FROM Books order by timeofcreation desc")
+                            book = cur.fetchone()
+                            
+                            cur.close()
+                           
+                            c.incr("book_registered")
+                            # return jsonify("Posted"), 200
+                        except Exception as e:
+                            logger.error("Exception in book register: %s", e)
+                            return "Not posted"
 
+                        
 
                 """ DISPLAY BOOK DETAILS """
                 bookData = {}
-                print(bookData)
-                bookData["id"] = test.id
-                bookData["id"]
-                bookData["title"] = test.title
-                bookData["author"] = test.author
-                bookData["isbn"] = test.isbn
-                bookData["quantity"] = test.quantity
+                print("book retrieved from db :", book)
+                bookData["id"] = book[0]
+                bookData["title"] = book[1]
+                bookData["author"] = book[2]
+                bookData["isbn"] = book[3]
+                bookData["quantity"] = book[4]
                 bookData['Image'] = ''
                 json1 = json.dumps(bookData, indent=4)
-                logger.info("Fetching book details")
 
                 image_array = {}
-                image_array['book_id'] = img_set.book_id
+                image_array['book_id'] = ""
+                image_array['url'] = ""
                 print("Image data for json", image_array)
-                image_array['url'] = img_set.url
-                logger.info("Fetching image details")
 
                 json2 = json.dumps(image_array, indent=4)
                 print(json2)
@@ -465,7 +483,6 @@ def register_book():
                 print (resUm)
                 resUm['Image'] = json.loads(json2)
                 print("no ans")
-                logger.info("Book with image details obtained")
                 return json.dumps(resUm, indent=4), 200
             except Exception as e:
                 logger.error("Exception in fetching book details: ", e)
@@ -496,107 +513,112 @@ def request_a_book(id):
         logger.info("Book id obtained from header")
 
         """ AUTHENTICATE BY TOKEN """
-        if not request.headers.get('Authorization'):
-            logger.error("Headers unavailable")
-            c.incr("request_a_book_invalid_login")
+        if not request.authorization:
+            logger.error("Email or password not entered")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
-        """ OBTAIN HEADER """
-        myHeader = request.headers["Authorization"]
-        if (myHeader == None):
-            logger.error("Headers unavailable")
-            c.incr("request_a_book_invalid_login")
-            return jsonify("Unauthorized"), 401
+        username = request.authorization.username
 
-
-        try:
-            decoded_header = base64.b64decode(myHeader)
-            decoded_header_by_utf = decoded_header.decode('utf-8')
-            dataDict = {}
-            dataDict["username"], dataDict["password"] = decoded_header_by_utf.split(":")
-        except Exception as e:
-            logger.error("Exception in bs4 decoding:", e)
-            c.incr("request_a_book_invalid_login")
-            return jsonify("Bad headers"), 401
-        print(dataDict)
-        """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
         conn = db.connect()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+        cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
+        print("user :", user)
 
+        """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
-            logger.error("User not available in database")
-            c.incr("request_a_book_invalid_login")
+            logger.error("User does not exist in database")
+            c.incr("index_invalid_login")
             return jsonify("Unauthorized"), 401
 
         userData = {}
-        userData["username"] = user[1]
-        userData["password"] = user[2]
+        userData["username"] = user[0]
+        userData["password"] = user[1]
 
-        if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
-            """ OBTAIN BOOK BY ID """
+        if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
+            cur.close()
+            logger.info("User authenticated")
+            c.incr("index_valid_login")
+            """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
             conn = db.connect()
             cur = conn.cursor()
+            cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+            user = cur.fetchone()
 
-            cur.execute("SELECT id, title, author, isbn, quantity FROM Books where id=%s", bookId)
-            book = cur.fetchone()
+            if not user:
+                logger.error("User not available in database")
+                c.incr("request_a_book_invalid_login")
+                return jsonify("Unauthorized"), 401
 
-            if (book == None):
-                logger.error("Book not available in database")
-                c.incr("request_a_book_not_found")
-                return jsonify("Not found"), 404
+            userData = {}
+            userData["username"] = user[1]
+            userData["password"] = user[2]
+
+            if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+
+                """ OBTAIN BOOK BY ID """
+                conn = db.connect()
+                cur = conn.cursor()
+
+                cur.execute("SELECT id, title, author, isbn, quantity FROM Books where id=%s", bookId)
+                book = cur.fetchone()
+
+                if (book == None):
+                    logger.error("Book not available in database")
+                    c.incr("request_a_book_not_found")
+                    return jsonify("Not found"), 404
 
 
-            cur.execute("SELECT id, url FROM Image where book_id=%s", bookId)
-            image = cur.fetchone()
+                cur.execute("SELECT id, url FROM Image where book_id=%s", bookId)
+                image = cur.fetchone()
 
-            if image:
-                logger.info("Image obtained for book")
-                bookData = {}
-                bookData["id"] = book[0]
-                bookData["title"] = book[1]
-                bookData["author"] = book[2]
-                bookData["isbn"] = book[3]
-                bookData["quantity"] = book[4]
-                bookData['Image'] = ''
-                json1 = json.dumps(bookData, indent=4)
+                if image:
+                    logger.info("Image obtained for book")
+                    bookData = {}
+                    bookData["id"] = book[0]
+                    bookData["title"] = book[1]
+                    bookData["author"] = book[2]
+                    bookData["isbn"] = book[3]
+                    bookData["quantity"] = book[4]
+                    bookData['Image'] = ''
+                    json1 = json.dumps(bookData, indent=4)
 
-                image_array = {}
-                image_array['id'] = image[0]
-                image_array['url'] = image[1]
+                    image_array = {}
+                    image_array['id'] = image[0]
+                    image_array['url'] = image[1]
 
-                json2 = json.dumps(image_array, indent=4)
-                resUm = json.loads(json1)
-                
-                resUm['Image'] = json.loads(json2)
-                return json.dumps(resUm, indent=4), 200
-            else:
-                logger.info("Fetching book details")
-                bookData = {}
-                bookData["id"] = book[0]
-                bookData["title"] = book[1]
-                bookData["author"] = book[2]
-                bookData["isbn"] = book[3]
-                bookData["quantity"] = book[4]
-                bookData['Image'] = ''
-                json1 = json.dumps(bookData, indent=4)
+                    json2 = json.dumps(image_array, indent=4)
+                    resUm = json.loads(json1)
+                    
+                    resUm['Image'] = json.loads(json2)
+                    return json.dumps(resUm, indent=4), 200
+                else:
+                    logger.info("Fetching book details")
+                    bookData = {}
+                    bookData["id"] = book[0]
+                    bookData["title"] = book[1]
+                    bookData["author"] = book[2]
+                    bookData["isbn"] = book[3]
+                    bookData["quantity"] = book[4]
+                    bookData['Image'] = ''
+                    json1 = json.dumps(bookData, indent=4)
 
-                image_array = {}
-                image_array['id'] = ''
-                image_array['url'] = ''
+                    image_array = {}
+                    image_array['id'] = ''
+                    image_array['url'] = ''
 
-                json2 = json.dumps(image_array, indent=4)
-                resUm = json.loads(json1)
+                    json2 = json.dumps(image_array, indent=4)
+                    resUm = json.loads(json1)
 
-                resUm['Image'] = json.loads(json2)
-                logger.info("Book available to user")
-                c.incr("request_a_book_success")
-                return json.dumps(resUm, indent=4), 200
-        logger.error("User not authenticated")
-        c.incr("request_a_book_fail")
-        return jsonify("Unauthorized"), 401
+                    resUm['Image'] = json.loads(json2)
+                    logger.info("Book available to user")
+                    c.incr("request_a_book_success")
+                    return json.dumps(resUm, indent=4), 200
+            logger.error("User not authenticated")
+            c.incr("request_a_book_fail")
+            return jsonify("Unauthorized"), 401
     except Exception as e:
         print("in exception")
         logger.error("Exception in fetching book by id: ", e)
@@ -1048,7 +1070,7 @@ def upload_image(id):
                     # upload_on_s3
                     print("My filename", filename)
                     logger.info("Saving file to folder")
-                    file.save(os.path.join(UPLOAD_FOLDER, filename))
+                    # file.save(os.path.join(UPLOAD_FOLDER, filename))
                     logger.info("File saved to folder")
                     # print(app.config['UPLOAD_FOLDER'])
                     # file.save(filename)

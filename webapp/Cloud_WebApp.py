@@ -986,7 +986,8 @@ def delete_book(id):
         return jsonify("Unauthorized"), 401
 
 """ Upload book image """
-@app.route("/book/<string:id>/image", methods=["POST"])
+@app.route('/book/<string:id>/image', methods=['POST'],
+           content_types=['multipart/form-data'])
 def upload_image(id):
     c.incr("upload_image")
     logger.info("Uploading book image")

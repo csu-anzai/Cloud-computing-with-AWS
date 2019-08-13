@@ -171,12 +171,14 @@ def create_database():
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
-    logger.info("Uploading image on s3")
-    s3_dir = os.mkdir(os.path.join(['tmp']))
-    print("S3 directory:", s3_dir)
-    print("filename inupload: ", os.path.join(s3_dir, filename))
+    print("Uploading image on s3")
+    # logger.info("Uploading image on s3")
+    # s3_dir = os.mkdir(os.path.join(['tmp']))
+    # print("S3 directory:", s3_dir)
+    # print("filename inupload: ", os.path.join(s3_dir, filename))
 
-    key_filename = os.path.join(s3_dir, filename)
+    # key_filename = os.path.join(s3_dir, filename)
+    key_filename = filename
     print("key_filename:",key_filename)
     print("Filename:",filename)
 
@@ -1616,10 +1618,11 @@ def reset_password():
         #Get emailId and verify if it exists in db
         if (email == ""):
             logger.debug("email is empty")
-            return JsonResponse({'message': 'Email cant be empty'}, status=400)
+            return jsonify({'message': 'Email cant be empty'}, status=400)
         
         #verrsify if username is valid
         email_status = verifyUsername(str(email))
+        print("username verified")
 
         try:
             conn = db.connect()

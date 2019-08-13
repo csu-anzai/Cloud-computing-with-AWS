@@ -115,7 +115,7 @@ logger.setLevel("INFO")
 ''' IMAGES FOLDER PATH '''
 # UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
 # UPLOAD_FOLDER = "Images"
-UPLOAD_FOLDER = "/tmp"
+UPLOAD_FOLDER = "/home/centos/deploy/Images/"
 
 
 ''' ALLOWED EXTENSIONS FOR UPLOAD ''' 
@@ -1048,12 +1048,12 @@ def upload_image(id):
                     # upload_on_s3
                     print("My filename:", filename)
                     logger.info("Saving file to folder")
-                    # file.save(os.path.join(UPLOAD_FOLDER, filename))
+                    file.save(os.path.join(UPLOAD_FOLDER, filename))
                     logger.info("File saved to folder")
                     # print(app.config['UPLOAD_FOLDER'])
                     # file.save(filename)
-                    # url_for_image = os.path.join(UPLOAD_FOLDER, filename)
-                    url_for_image = filename
+                    url_for_image = os.path.join(UPLOAD_FOLDER, filename)
+                    # url_for_image = filename
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
                     bookId = id

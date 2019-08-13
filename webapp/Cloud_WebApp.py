@@ -1048,11 +1048,9 @@ def upload_image(id):
                     # upload_on_s3
                     print("My filename:", filename)
                     logger.info("Saving file to folder")
-                    file.save(os.path.join(UPLOAD_FOLDER, filename))
-                    logger.info("File saved to folder")
-                    # print(app.config['UPLOAD_FOLDER'])
-                    # file.save(filename)
-                    url_for_image = os.path.join(UPLOAD_FOLDER, filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    print("File uploaded on local")
                     # url_for_image = filename
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """

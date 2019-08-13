@@ -187,13 +187,15 @@ def upload_on_s3( filename ):
     bucket_resource = s3
 
     print("bucket_resource", bucket_resource)
+    with open(filename, 'rb') as data:
+        s3.upload_fileobj(data, aws_s3_bucket_name, filename)
 
-    bucket_resource.upload_file(
-        Bucket = aws_s3_bucket_name,
-        Filename=key_filename,
-        Key=filename
-        # ExtraArgs={'ContentType': "multipart/form-data"}
-    )
+    # bucket_resource.upload_file(
+    #     Bucket = aws_s3_bucket_name,
+    #     Filename=key_filename,
+    #     Key=filename
+    #     # ExtraArgs={'ContentType': "multipart/form-data"}
+    # )
     print("UPLOAD SUCCESSFULL")
     logger.info("Image uploaded in s3")
 
@@ -1606,54 +1608,58 @@ def get_record_details(email):
 @app.route("/reset", methods=["POST"])
 def reset_password():
     c.incr('api.passwordReset')
-    email=request.json.get("username")
-    print("username: ",email)
-
-    #Get emailId and verify if it exists in db
-    if (email == ""):
-        logger.debug("email is empty")
-        return JsonResponse({'message': 'Email cant be empty'}, status=400)
-    
-    #verrsify if username is valid
-    email_status = verifyUsername(str(email))
-
     try:
-        conn = db.connect()
-        cur = conn.cursor()
 
-        cur.execute("select * from Person where username=%s", email)
-        user = cur.fetchone()
+        email=request.json.get("username")
+        print("username: ",email)
 
-        if email_status is not None:
-            if user:
-                respDict = get_record_details(email)
-                # respJson = json.loads(respDict)
+        #Get emailId and verify if it exists in db
+        if (email == ""):
+            logger.debug("email is empty")
+            return JsonResponse({'message': 'Email cant be empty'}, status=400)
+        
+        #verrsify if username is valid
+        email_status = verifyUsername(str(email))
 
-                # print("response msg : ",respJson)
-                # print("response msg : ",respJson['msg'])
-                responseMsg = respDict['msg']
-                responseDetails = respDict['details']
+        try:
+            conn = db.connect()
+            cur = conn.cursor()
 
-                if responseMsg == "Send email":
+            cur.execute("select * from Person where username=%s", email)
+            user = cur.fetchone()
 
-                        print("My token is",responseDetails['token'])
-                        token = responseDetails['token']
+            if email_status is not None:
+                if user:
+                    respDict = get_record_details(email)
+                    # respJson = json.loads(respDict)
 
-                        #generate password reset link
-                        resetLink = generate_reset_Link(newDomain, email, token)
-                        print("Reset link is:", resetLink)
+                    # print("response msg : ",respJson)
+                    # print("response msg : ",respJson['msg'])
+                    responseMsg = respDict['msg']
+                    responseDetails = respDict['details']
 
-                        #send email
-                        send_Email(email, resetLink)
+                    if responseMsg == "Send email":
 
-                        return jsonify("Email sent successfully"), 200
+                            print("My token is",responseDetails['token'])
+                            token = responseDetails['token']
+
+                            #generate password reset link
+                            resetLink = generate_reset_Link(newDomain, email, token)
+                            print("Reset link is:", resetLink)
+
+                            #send email
+                            send_Email(email, resetLink)
+
+                            return jsonify("Email sent successfully"), 200
+                    else:
+                        return jsonify("Check email for password reset"), 200  
                 else:
-                    return jsonify("Check email for password reset"), 200  
+                    return jsonify ("User does not exist"), 400
             else:
-                return jsonify ("User does not exist"), 400
-        else:
-            return jsonify("Invalid userId"), 400
-    except Error as e:
+                return jsonify("Invalid userId"), 400
+        except Error as e:
+            return jsonify(e), 400
+    except Exception as e:
         return jsonify(e), 400
 
 def allowed_file(filename):

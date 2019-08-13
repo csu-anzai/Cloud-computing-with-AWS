@@ -182,6 +182,7 @@ def upload_on_s3( filename ):
     try:
 
         key_filename = filename
+        print("aws_s3_bucket_name: ", aws_s3_bucket_name)
         print("key_filename:",key_filename)
         print("Filename:",filename)
 
@@ -192,10 +193,10 @@ def upload_on_s3( filename ):
         bucket_resource = s3
 
         print("bucket_resource", bucket_resource)
-        with open(filename, 'rb') as data:
-            s3.upload_fileobj(data, aws_s3_bucket_name, filename)
+        # with open(filename, 'rb') as data:
+        #     s3.upload_fileobj(data, aws_s3_bucket_name, filename)
 
-        # bucket_resource.upload_file(
+        bucket_resource.upload_file(filename, aws_s3_bucket_name,filename)
         #     Bucket = aws_s3_bucket_name,
         #     Filename=key_filename,
         #     Key=filename

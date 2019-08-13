@@ -34,11 +34,7 @@ config.read(pathToConfig)
 """ Storing cofig variables in python variables """
 local_run = config["Config"]['LOCAL_RUN']
 aws_region = config["Config"]["AWS_REGION_NAME"]
-print(aws_region)
 production_run = config["Config"]['PRODUCTION_RUN']
-print(production_run)
-
-
 
 """ A password policy """
 policy = PasswordPolicy.from_names(
@@ -66,8 +62,7 @@ app.config['STATSD_PREFIX'] = 'statsd'
 
 """ Initiate database """
 if(production_run):
-    print("In production_run")
-    print(production_run)
+    print("In production_run", production_run)
     aws_s3_bucket_name = config["Config"]['S3_BUCKET_NAME']
     app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
     app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
@@ -82,7 +77,7 @@ elif(local_run):
     app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 """ Logging config """
-LOGGING_CONFIG = None
+# LOGGING_CONFIG = None
 logging.config.dictConfig({
     'version': 1,
     'disable_existing_loggers': False,
@@ -109,12 +104,9 @@ logging.config.dictConfig({
 })
 
 logger = logging.getLogger(__name__)
-# logger = logging.getLogger(app)
 logger.setLevel("INFO")
  
 ''' IMAGES FOLDER PATH '''
-# UPLOAD_FOLDER = os.path.dirname(__file__) + "Images"
-# UPLOAD_FOLDER = "Images"
 UPLOAD_FOLDER = "/home/centos/deploy/Images/"
 
 
@@ -132,11 +124,8 @@ dbPass = config["Config"]['MYSQL_DATABASE_PASSWORD']
 rdsInstance = "-h"+rds
 dataUser = "-u"+dbUser
 dataPass = "-p"+dbPass
-# call(["mysql", rdsInstance , dataUser, dataPass, "<", "createScripts.sql"])
-print("Database created")
 
 """ Connect to RDS instance """
-print("RDS", rds)
 try:
     connection = mysql.connector.connect(host=rds,
         user = dbUser,
@@ -153,10 +142,6 @@ except Error as e:
 """ Create tables in Database """
 def create_database():
     print("Databse creation method initiated")
-    print("db", db)
-    # conn = connection.connect()
-
-    # print("connect", conn)
     cur = connection.cursor()
     print("cursor", cur)
     cur.execute("show databases")
@@ -164,45 +149,19 @@ def create_database():
     cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, timeofcreation varchar(100), PRIMARY KEY ( id ))")
     cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
     print("Tables created")
-    # logger.info("Tables created")
-#print("Databse creation initiated 1")
-#create_database()
-#print("Databse creation completed 2")
-
+    
+print("Databse creation initiated 1")
+create_database()
+print("Databse creation completed 2")
+logger.info("Tables created")
 
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
-    print("Uploading image on s3")
-    print("aws_s3_bucket_name: ", aws_s3_bucket_name)
-    # logger.info("Uploading image on s3")
-    # s3_dir = os.mkdir(os.path.join(['tmp']))
-    # print("S3 directory:", s3_dir)
-    # print("filename inupload: ", os.path.join(s3_dir, filename))
-
-    # key_filename = os.path.join(s3_dir, filename)
     try:
-
-        key_filename = filename
-        print("aws_s3_bucket_name: ", aws_s3_bucket_name)
-        print("key_filename:",key_filename)
-        print("Filename:",filename)
-
-        #filename = filename
-
         s3 = boto3.client(
             "s3")
         bucket_resource = s3
-
-        print("bucket_resource", bucket_resource)
-        # with open(filename, 'rb') as data:
-        #     s3.upload_fileobj(data, aws_s3_bucket_name, filename)
-
         bucket_resource.upload_file(filename, aws_s3_bucket_name,filename)
-        #     Bucket = aws_s3_bucket_name,
-        #     Filename=key_filename,
-        #     Key=filename
-        #     # ExtraArgs={'ContentType': "multipart/form-data"}
-        # )
         print("UPLOAD SUCCESSFULL")
         logger.info("Image uploaded in s3")
         return True
@@ -212,10 +171,8 @@ def upload_on_s3( filename ):
 
 """ DELETE IMAGE FROM S3 BUCKET """
 def delete_image_from_s3( filename ):
-
     key_filename = filename
     print("key_filename : ", key_filename)
-
     s3 = boto3.client(
         "s3")
     bucket_resource = s3
@@ -225,15 +182,11 @@ def delete_image_from_s3( filename ):
         s3.delete_object(
             Bucket = aws_s3_bucket_name,
             Key=key_filename)
-    
-
         print("deleted image from S3")
         logger.info("Image deleted from s3")            
     except Exception as e:
         logger.error("Exception in image deletion from s3: ", e)
         print("Exception : ",e)
-
-
 
 def presignedUrl( filename ):
     filename = filename
@@ -273,18 +226,9 @@ def register_user():
         logger.error("Auth headers found")
         c.incr("index_invalid_login")
         return jsonify("Auth headers found, cannot register"), 401
-    # try:
-    #     request.get_json()
-    # except Exception as e:
-    #     logger.error("Error: ", e)
-    #     return jsonify("Bad request one"), 400
     try:
         if not request.content_type == 'application/json':
             return jsonify('failed', 'Content-type must be application/json', 401)
-    # except Exception as e:
-    #     logger.info("No json input given")
-        # return jsonify("No json input"), 400
-
         try:
             email = request.json.get('username')
             print("email : ",email)
@@ -424,10 +368,7 @@ def register_book():
         if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
             cur.close()
             logger.info("User authenticated")
-            c.incr("index_valid_login")
-            # return jsonify(str(datetime.datetime.now())), 200
-
-            
+            c.incr("index_valid_login")            
             try:
                 """ OBTAIN AND STORE BOOK DETAILS FROM JSON IN DATABSE """
                 logger.info("Obtaining book data")
@@ -472,7 +413,6 @@ def register_book():
                             cur.close()
                            
                             c.incr("book_registered")
-                            # return jsonify("Posted"), 200
                         except Exception as e:
                             logger.error("Exception in book register: %s", e)
                             return "Not posted"
@@ -517,8 +457,6 @@ def register_book():
         c.incr("register_book_invalid_login")
         return jsonify("Unauthorized"), 401
 
-
-
 """
 GET BOOK BY ID
 """
@@ -559,26 +497,6 @@ def request_a_book(id):
             # cur.close()
             logger.info("User authenticated")
             c.incr("index_valid_login")
-            """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-            # conn = db.connect()
-            # cur = conn.cursor()
-            # cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
-            # user = cur.fetchone()
-
-            # if not user:
-            #     logger.error("User not available in database")
-            #     c.incr("request_a_book_invalid_login")
-            #     return jsonify("Unauthorized"), 401
-
-            # userData = {}
-            # userData["username"] = user[1]
-            # userData["password"] = user[2]
-
-            # if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
-
-            #     """ OBTAIN BOOK BY ID """
-            #     conn = db.connect()
-            #     cur = conn.cursor()
             try:
                 cur.execute("SELECT id, title, author, isbn, quantity FROM Books where id=%s", bookId)
                 book = cur.fetchone()
@@ -678,11 +596,8 @@ def request_all_books():
 
 
         if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
-            # cur.close()
             logger.info("User authenticated")
             c.incr("index_valid_login")
-            # return jsonify(str(datetime.datetime.now())), 200
-
             cur.execute("SELECT * FROM Books")
             books = cur.fetchall()
             logger.info("All books fetched")
@@ -760,7 +675,7 @@ def request_all_books():
 
                             resUm = json.loads(json1)
                             resUm['Image'] = json.loads(json2)
-                            jsonFile = json.dumps(resUm)
+                            jsonFile = json.dumps(resUm, indent=4)
                             output.append(jsonFile)
 
                             cur.close()
@@ -776,8 +691,6 @@ def request_all_books():
         logger.error("Exception in fetching all books: ", e)
         c.incr("request_all_books_invalid_login")
         return jsonify(e), 500
-
-
 
 """
 UPDATE A BOOK
@@ -813,10 +726,8 @@ def update_book():
 
 
         if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
-            # cur.close()
             logger.info("User authenticated")
             c.incr("index_valid_login")
-            # return jsonify(str(datetime.datetime.now())), 200
 
             """ OBTAIN BOOK ID TO COMARE IN DATABASE """
             bookId = request.json.get("id")
@@ -909,8 +820,6 @@ def update_book():
         c.incr("update_book_invalid_login")
         return jsonify("Unauthorized"), 401
 
-
-
 """
 DELETE A BOOK
 """
@@ -946,17 +855,14 @@ def delete_book(id):
 
 
         if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
-            # cur.close()
             logger.info("User authenticated")
             c.incr("index_valid_login")
-            # return jsonify(str(datetime.datetime.now())), 200
-
             cur.execute("SELECT * FROM Image where book_id=%s", bookId)
             img_set =cur.fetchone()
             print("print img_set: ", img_set)
 
-            # imageUrl = img_set[1]
-            # print("url: ",imageUrl)
+            imageUrl = img_set[1]
+            print("url: ",imageUrl)
 
             if not img_set:
                 cur.execute("DELETE FROM Books WHERE id=%s", bookId)
@@ -971,16 +877,13 @@ def delete_book(id):
                 cur.execute("DELETE FROM Image WHERE id=%s", img_set[0])
                 conn.commit()
                 logger.info("Book's image also deleted")
+
                 ''' DELETING IMAGE FROM S3 IF EXISIS '''
                 logger.info("Deleting book from s3")
                 delete_image_from_s3(imageUrl)
                 logger.info("Book deleted from s3")
             
             cur.close()
-
-            # if not local_run:
-            
-
             return jsonify(''),204
         logger.error("User not authorized")
         c.incr("delete_book_invalid_login")
@@ -1024,14 +927,8 @@ def upload_image(id):
 
 
     if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
-        # cur.close()
         logger.info("User authenticated")
         c.incr("index_valid_login")
-        # return jsonify(str(datetime.datetime.now())), 200
-        # if not request.json:
-        #     logger.error("bad json")
-        #     return jsonify("Bad request"), 400
-
         try:
             if 'file' in request.files:
 
@@ -1045,14 +942,12 @@ def upload_image(id):
                     logger.info("Verfiying file type")
                     filename = secure_filename(file.filename)
                     logger.info("File type verified")
-                    # upload_on_s3
                     print("My filename:", filename)
                     logger.info("Saving file to folder")
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     print("File uploaded on local")
                     print("Upload folder is:", UPLOAD_FOLDER)
-                    # url_for_image = filename
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
                     bookId = id
@@ -1077,7 +972,6 @@ def upload_image(id):
                     image = cur.fetchone()
                     logger.info("Book image fetched")
                     print("Image:", image)
-                    # imageId = image[0]
 
                     if image is None:
                         logger.info("No image for book")
@@ -1102,33 +996,12 @@ def upload_image(id):
                     logger.info("Uploading book image to s3")
                     try:
 
-                        key_filename = filename
-                        print("key_filename:",key_filename)
-                        print("Filename:",filename)
-
-                        #filename = filename
-
-                        s3 = boto3.client(
-                            "s3")
-                        bucket_resource = s3
-                        print("aws_s3_bucket_name: ", aws_s3_bucket_name)
-
-                        print("bucket_resource", bucket_resource)
-                        print("aws_s3_bucket_name: ", aws_s3_bucket_name)
-                        # with open(filename, 'rb') as data:
-                        #     s3.upload_fileobj(data, aws_s3_bucket_name, filename)
-
-                        bucket_resource.upload_file(url_for_image, aws_s3_bucket_name, filename)
-                        #     Bucket = aws_s3_bucket_name,
-                        #     Filename=key_filename,
-                        #     Key=filename
-                        #     # ExtraArgs={'ContentType': "multipart/form-data"}
-                        # )
+                        upload_on_s3(url_for_image)
+                        
                         print("UPLOAD SUCCESSFULL")
                         logger.info("Image uploaded in s3")
                     except ClientError as e:
                         return e
-                    # upload_on_s3(url_for_image)
                     logger.info("Uploading book image to s3 successful")
 
                     """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""
@@ -1336,9 +1209,9 @@ def update_image(id, imgId):
 
                     print("filename: ",filename)
                     logger.info("Saving image in folder")
-                    file.save(os.path.join(UPLOAD_FOLDER, filename))
-                    logger.info("Image saved in folder")
-                    url_for_image = os.path.join(UPLOAD_FOLDER, filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    logger.info("File saved in local folder")
 
                     print("url: ", url_for_image)
 

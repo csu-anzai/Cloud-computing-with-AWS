@@ -986,8 +986,7 @@ def delete_book(id):
         return jsonify("Unauthorized"), 401
 
 """ Upload book image """
-@app.route('/book/<string:id>/image', methods=['POST'],
-           content_types=['multipart/form-data'])
+@app.route('/book/<string:id>/image', methods=['POST'])
 def upload_image(id):
     c.incr("upload_image")
     logger.info("Uploading book image")
@@ -1024,9 +1023,9 @@ def upload_image(id):
         logger.info("User authenticated")
         c.incr("index_valid_login")
         # return jsonify(str(datetime.datetime.now())), 200
-        if not request.json:
-            logger.error("bad json")
-            jsonify("Bad request"), 400
+        # if not request.json:
+        #     logger.error("bad json")
+        #     return jsonify("Bad request"), 400
 
         try:
             if 'file' in request.files:

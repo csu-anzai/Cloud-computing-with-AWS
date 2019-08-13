@@ -1051,6 +1051,7 @@ def upload_image(id):
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     print("File uploaded on local")
+                    print("Upload folder is:", UPLOAD_FOLDER)
                     # url_for_image = filename
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """

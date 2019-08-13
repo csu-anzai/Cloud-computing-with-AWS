@@ -1119,7 +1119,7 @@ def upload_image(id):
                         # with open(filename, 'rb') as data:
                         #     s3.upload_fileobj(data, aws_s3_bucket_name, filename)
 
-                        bucket_resource.upload_file(filename, aws_s3_bucket_name, filename)
+                        bucket_resource.upload_file(url_for_image, aws_s3_bucket_name, filename)
                         #     Bucket = aws_s3_bucket_name,
                         #     Filename=key_filename,
                         #     Key=filename

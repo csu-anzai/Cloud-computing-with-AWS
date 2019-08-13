@@ -221,7 +221,6 @@ def presignedUrl( filename ):
 def register_user():
     c.incr("register_user")
     logger.info("Registering for user")
-    create_database()
     if request.authorization:
         logger.error("Auth headers found")
         c.incr("index_invalid_login")
@@ -295,7 +294,6 @@ def register_user():
 def index():
     c.incr("index")
     logger.info("User request auth")
-    create_database()
     """ VERIFYING BASIC AUTH """
     if not request.authorization:
         logger.error("Email or password not entered")
@@ -1362,14 +1360,15 @@ def generate_reset_Link(domain_name, email, token):
     DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
     newDomain = DOMAIN_NAME.rstrip(".")
     SENDER = newDomain
-    resetLink = "https://noreply@"+domain_name+"/reset@email="+email+"&token="+token
+    resetLink = "https://"+domain_name+"/reset@email="+email+"&token="+token
+    logger.info("Reset link generated")
     return resetLink
 
 def send_Email(email, resetLink):
     logger.info("Sending email to SNS")
     try:  
         client = boto3.client('ses',region_name='us-east-1')
-        print("sending email client created")
+        logger.info("sending email client created")
         client.send_email(
             Source = SENDER,
             Destination = {
@@ -1401,6 +1400,7 @@ def send_Email(email, resetLink):
     except Exception as e:
         print("Exception oin sending email: ", e)
         c.incr('api.passwordReset.POST.400')
+        logger.error("Exception in sending email to client: %s", e)
         return jsonify({"message": " : you will receive password reset link if the email address exists in our system"})
 
 def generate_uuid():

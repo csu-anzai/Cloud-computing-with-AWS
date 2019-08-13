@@ -173,6 +173,7 @@ def create_database():
 """ UPLOAD IMAGE on S3 """
 def upload_on_s3( filename ):
     print("Uploading image on s3")
+    print("aws_s3_bucket_name: ", aws_s3_bucket_name)
     # logger.info("Uploading image on s3")
     # s3_dir = os.mkdir(os.path.join(['tmp']))
     # print("S3 directory:", s3_dir)
@@ -204,6 +205,7 @@ def upload_on_s3( filename ):
         # )
         print("UPLOAD SUCCESSFULL")
         logger.info("Image uploaded in s3")
+        return True
     except ClientError as e:
         return e
 
@@ -1110,12 +1112,14 @@ def upload_image(id):
                         s3 = boto3.client(
                             "s3")
                         bucket_resource = s3
+                        print("aws_s3_bucket_name: ", aws_s3_bucket_name)
 
                         print("bucket_resource", bucket_resource)
-                        with open(filename, 'rb') as data:
-                            s3.upload_fileobj(data, aws_s3_bucket_name, filename)
+                        print("aws_s3_bucket_name: ", aws_s3_bucket_name)
+                        # with open(filename, 'rb') as data:
+                        #     s3.upload_fileobj(data, aws_s3_bucket_name, filename)
 
-                        # bucket_resource.upload_file(
+                        bucket_resource.upload_file(filename, aws_s3_bucket_name, filename)
                         #     Bucket = aws_s3_bucket_name,
                         #     Filename=key_filename,
                         #     Key=filename

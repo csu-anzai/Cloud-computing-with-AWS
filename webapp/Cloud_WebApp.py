@@ -62,7 +62,7 @@ app.config['STATSD_PREFIX'] = 'statsd'
 
 """ Initiate database """
 if(production_run):
-    print("In production_run", production_run)
+    logger.info("In production_run", production_run)
     aws_s3_bucket_name = config["Config"]['S3_BUCKET_NAME']
     app.config['MYSQL_DATABASE_USER'] = 'csye6225master'
     app.config['MYSQL_DATABASE_PASSWORD'] = 'csye6225password'
@@ -133,36 +133,36 @@ try:
         database = 'csye6225',
         buffered=True)
     if connection.is_connected():
-        print("inside db $$$$$", connection.get_server_info())
+        logger.info("inside db $$$$$", connection.get_server_info())
 except Error as e:
-    print("Error", e)
+    logger.info("Error", e)
 
 
 
 """ Create tables in Database """
 def create_database():
-    print("Databse creation method initiated")
+    logger.info("Databse creation method initiated")
     cur = connection.cursor()
-    print("cursor", cur)
+    logger.info("cursor", cur)
     cur.execute("show databases")
     cur.execute("CREATE table if not exists Person(id varchar(100) NOT NULL, username varchar(100) DEFAULT NULL, password varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
     cur.execute("CREATE table if not exists Books(id varchar(100) NOT NULL, title varchar(50) DEFAULT NULL, author varchar(50) DEFAULT NULL, isbn varchar(50) DEFAULT NULL, quantity varchar(50) DEFAULT NULL, timeofcreation varchar(100), PRIMARY KEY ( id ))")
     cur.execute("CREATE table if not exists Image(id varchar(100) NOT NULL, url varchar(1000) DEFAULT NULL, book_id varchar(100) DEFAULT NULL, PRIMARY KEY ( id ))")
-    print("Tables created")
+    logger.info("Tables created")
     
-print("Databse creation initiated 1")
+logger.info("Databse creation initiated")
 create_database()
-print("Databse creation completed 2")
+logger.info("Databse creation completed")
 logger.info("Tables created")
 
 """ UPLOAD IMAGE on S3 """
-def upload_on_s3( filename ):
+def upload_on_s3( filename , nameOfFile):
     try:
         s3 = boto3.client(
             "s3")
         bucket_resource = s3
-        bucket_resource.upload_file(filename, aws_s3_bucket_name,filename)
-        print("UPLOAD SUCCESSFULL")
+        bucket_resource.upload_file(filename, aws_s3_bucket_name,nameOfFile)
+        logger.info("UPLOAD SUCCESSFULL")
         logger.info("Image uploaded in s3")
         return True
     except ClientError as e:
@@ -172,30 +172,30 @@ def upload_on_s3( filename ):
 """ DELETE IMAGE FROM S3 BUCKET """
 def delete_image_from_s3( filename ):
     key_filename = filename
-    print("key_filename : ", key_filename)
+    logger.info("key_filename : ", key_filename)
     s3 = boto3.client(
         "s3")
     bucket_resource = s3
-    print("bucket_resource", bucket_resource)
+    logger.info("bucket_resource", bucket_resource)
     try:
 
         s3.delete_object(
             Bucket = aws_s3_bucket_name,
             Key=key_filename)
-        print("deleted image from S3")
+        logger.info("deleted image from S3")
         logger.info("Image deleted from s3")            
     except Exception as e:
         logger.error("Exception in image deletion from s3: ", e)
-        print("Exception : ",e)
+        logger.info("Exception : ",e)
 
 def presignedUrl( filename ):
     filename = filename
-    print("filename : ", filename)
+    logger.info("filename : ", filename)
     s3_client = boto3.client('s3',
          config=Config(signature_version='s3v4'))
-    print("s3 client: ", s3_client)
+    logger.info("s3 client: ", s3_client)
     try:
-        print("Bucket name:", aws_s3_bucket_name)
+        logger.info("Bucket name:", aws_s3_bucket_name)
         resp_url = s3_client.generate_presigned_url(
             'get_object',
             Params = {
@@ -205,11 +205,11 @@ def presignedUrl( filename ):
             ExpiresIn = 60*2
         )
 
-        print(resp_url)
+        logger.info(resp_url)
         logger.info("presigned url generated")
     except Exception as e:
         logger.error("Exception in presigned url generaiton: ", e)
-        print("Exception is:", e)
+        logger.info("Exception is:", e)
     logger.info("Presigned url sent")
     return resp_url
     
@@ -221,7 +221,6 @@ def presignedUrl( filename ):
 def register_user():
     c.incr("register_user")
     logger.info("Registering for user")
-    create_database()
     if request.authorization:
         logger.error("Auth headers found")
         c.incr("index_invalid_login")
@@ -231,7 +230,7 @@ def register_user():
             return jsonify('failed', 'Content-type must be application/json', 401)
         try:
             email = request.json.get('username')
-            print("email : ",email)
+            logger.info("email : ",email)
             if not email:
                 logger.error("Email not found")
                 return jsonify("Email not found"), 400
@@ -295,7 +294,6 @@ def register_user():
 def index():
     c.incr("index")
     logger.info("User request auth")
-    create_database()
     """ VERIFYING BASIC AUTH """
     if not request.authorization:
         logger.error("Email or password not entered")
@@ -308,7 +306,7 @@ def index():
     cur = conn.cursor()
     cur.execute("SELECT username, password FROM Person where username=%s", username)
     user = cur.fetchone()
-    print("user :", user)
+    logger.info("user :", user)
 
     """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
     if not user:
@@ -352,7 +350,7 @@ def register_book():
         cur = conn.cursor()
         cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user :", user)
+        logger.info("user :", user)
 
         """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
@@ -421,7 +419,7 @@ def register_book():
 
                 """ DISPLAY BOOK DETAILS """
                 bookData = {}
-                print("book retrieved from db :", book)
+                logger.info("book retrieved from db :", book)
                 bookData["id"] = book[0]
                 bookData["title"] = book[1]
                 bookData["author"] = book[2]
@@ -433,18 +431,18 @@ def register_book():
                 image_array = {}
                 image_array['book_id'] = ""
                 image_array['url'] = ""
-                print("Image data for json", image_array)
+                logger.info("Image data for json", image_array)
 
                 json2 = json.dumps(image_array, indent=4)
-                print(json2)
+                logger.info(json2)
                 resUm = json.loads(json1)
-                print (resUm)
+                logger.info (resUm)
                 resUm['Image'] = json.loads(json2)
-                print("no ans")
+                logger.info("no ans")
                 return json.dumps(resUm, indent=4), 200
             except Exception as e:
                 logger.error("Exception in fetching book details: ", e)
-                print("in exception")
+                logger.info("in exception")
                 logger.error("Book details not entered in proper format")
                 c.incr("register_book_improper_format")
                 return jsonify("Bad request"), 400
@@ -452,7 +450,7 @@ def register_book():
         c.incr("register_book_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
-        print("outer exception")
+        logger.info("outer exception")
         logger.error("Exception in registering user: ", e)
         c.incr("register_book_invalid_login")
         return jsonify("Unauthorized"), 401
@@ -480,7 +478,7 @@ def request_a_book(id):
         cur = conn.cursor()
         cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user :", user)
+        logger.info("user :", user)
 
         """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
@@ -557,7 +555,7 @@ def request_a_book(id):
                 c.incr("request_a_book_fail")
                 return jsonify("Unauthorized"), 401
     except Exception as e:
-        print("in exception")
+        logger.info("in exception")
         logger.error("Exception in fetching book by id: ", e)
         c.incr("request_a_book_fail")
         return jsonify("Unauthorized"), 401
@@ -582,7 +580,7 @@ def request_all_books():
         cur = conn.cursor()
         cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user :", user)
+        logger.info("user :", user)
 
         """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
@@ -601,21 +599,21 @@ def request_all_books():
             cur.execute("SELECT * FROM Books")
             books = cur.fetchall()
             logger.info("All books fetched")
-            print(len(books))
+            logger.info(len(books))
 
             cur.execute("SELECT * FROM Image")
             img_es = cur.fetchall()
             logger.info("All images fetched")
-            print(len(img_es))
+            logger.info(len(img_es))
 
             output = []
             for book in books:
                 if not img_es:
                     logger.info("No image in database")
-                    print("no images")
+                    logger.info("no images")
                     bookData = {}
                     bookData["id"] = book[0]
-                    print("Book 0", book[0])
+                    logger.info("Book 0", book[0])
                     bookData["title"] = book[1]
                     bookData["author"] = book[2]
                     bookData["isbn"] = book[3]
@@ -634,7 +632,7 @@ def request_all_books():
                     resUm['Image'] = json.loads(json2)
                     jsonFile = json.dumps(resUm)
                     output.append(jsonFile)
-                    print("output",output)
+                    logger.info("output",output)
             
                 else:
                     for img in img_es:
@@ -654,7 +652,7 @@ def request_all_books():
                             image_array = {}
                             image_array["id"] = img[0]
                             image_array["url"] = img[1]
-                            print("Image 1", img[1])
+                            logger.info("Image 1", img[1])
                             image_array["book_id"] = img[2]
                             json2 = json.dumps(image_array, indent=4)
 
@@ -687,7 +685,7 @@ def request_all_books():
         c.incr("request_all_books_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
-        print("first try exception")
+        logger.info("first try exception")
         logger.error("Exception in fetching all books: ", e)
         c.incr("request_all_books_invalid_login")
         return jsonify(e), 500
@@ -712,7 +710,7 @@ def update_book():
         cur = conn.cursor()
         cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user :", user)
+        logger.info("user :", user)
 
         """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
@@ -731,17 +729,17 @@ def update_book():
 
             """ OBTAIN BOOK ID TO COMARE IN DATABASE """
             bookId = request.json.get("id")
-            print("id : ", bookId)
+            logger.info("id : ", bookId)
 
             if (bookId==None):
-                print("Book not entered")
+                logger.info("Book not entered")
                 logger.info("Book not entered")
                 return jsonify("Bad request"), 400
             """ OBTAIN BOOK BY ID """
             cur.execute("SELECT * FROM Books where id = %s", bookId)
             book = cur.fetchone()
             cur.close
-            print("book : ", book)
+            logger.info("book : ", book)
 
             if (book == None):
                 logger.error("Book unavailable in database")
@@ -841,7 +839,7 @@ def delete_book(id):
         cur = conn.cursor()
         cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user :", user)
+        logger.info("user :", user)
 
         """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
@@ -859,10 +857,10 @@ def delete_book(id):
             c.incr("index_valid_login")
             cur.execute("SELECT * FROM Image where book_id=%s", bookId)
             img_set =cur.fetchone()
-            print("print img_set: ", img_set)
+            logger.info("logger.info img_set: ", img_set)
 
             imageUrl = img_set[1]
-            print("url: ",imageUrl)
+            logger.info("url: ",imageUrl)
 
             if not img_set:
                 cur.execute("DELETE FROM Books WHERE id=%s", bookId)
@@ -913,7 +911,7 @@ def upload_image(id):
     cur = conn.cursor()
     cur.execute("SELECT username, password FROM Person where username=%s", username)
     user = cur.fetchone()
-    print("user :", user)
+    logger.info("user :", user)
 
     """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
     if not user:
@@ -936,18 +934,18 @@ def upload_image(id):
 
                 if file.filename == '':
                     logger.info("File not selected")
-                    print('No selected file')
+                    logger.info('No selected file')
 
                 if file and allowed_file(file.filename):
                     logger.info("Verfiying file type")
                     filename = secure_filename(file.filename)
                     logger.info("File type verified")
-                    print("My filename:", filename)
+                    logger.info("My filename:", filename)
                     logger.info("Saving file to folder")
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    print("File uploaded on local")
-                    print("Upload folder is:", UPLOAD_FOLDER)
+                    logger.info("File uploaded on local")
+                    logger.info("Upload folder is:", UPLOAD_FOLDER)
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
                     bookId = id
@@ -971,20 +969,20 @@ def upload_image(id):
                     cur.execute("SELECT * FROM Image WHERE book_id=%s", bookId)
                     image = cur.fetchone()
                     logger.info("Book image fetched")
-                    print("Image:", image)
+                    logger.info("Image:", image)
 
                     if image is None:
                         logger.info("No image for book")
                         
-                        print("printg **********")
+                        logger.info("logger.infog **********")
                     else:
-                        print("image exists")
+                        logger.info("image exists")
                         imageId = image[0]
                         logger.info("Deleting current book image")
                         cur.execute("DELETE FROM Image WHERE book_id=%s", bookId)
                         conn.commit()
                         logger.info("Deleting current book image successful")
-                        print("image deleted")
+                        logger.info("image deleted")
                         
                     logger.info("Inserting new book image")
                     cur.execute("INSERT INTO Image(id, url, book_id) VALUES (uuid(),%s, %s)", (url_for_image, bookId))
@@ -996,9 +994,9 @@ def upload_image(id):
                     logger.info("Uploading book image to s3")
                     try:
 
-                        upload_on_s3(url_for_image)
+                        upload_on_s3(url_for_image, filename)
                         
-                        print("UPLOAD SUCCESSFULL")
+                        logger.info("UPLOAD SUCCESSFULL")
                         logger.info("Image uploaded in s3")
                     except ClientError as e:
                         return e
@@ -1049,17 +1047,17 @@ def get_book_image(id, imgId):
     c.incr("get_book_image")
     logger.info("Getting book image from id")
     try:
-        print("Getting book image")
+        logger.info("Getting book image")
         bookId = id
         logger.info("Book id obtained")
-        # print("BOOK ID", bookId)
+        # logger.info("BOOK ID", bookId)
         imageId = imgId
         logger.info("Image id obtained")
 
-        print("bookid: " + bookId + "img id: "+imageId)
+        logger.info("bookid: " + bookId + "img id: "+imageId)
         conn = db.connect()
         cur = conn.cursor()
-        print("conn establised")
+        logger.info("conn establised")
 
         """ AUTHENTICATE BY TOKEN """
         if not request.authorization:
@@ -1073,7 +1071,7 @@ def get_book_image(id, imgId):
         cur = conn.cursor()
         cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user :", user)
+        logger.info("user :", user)
 
         """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
@@ -1095,7 +1093,7 @@ def get_book_image(id, imgId):
                 """ OBTAIN BOOK BY ID from local db"""
                 cur.execute("SELECT * FROM Image where id=%s and book_id=%s", (imageId, bookId))
                 image = cur.fetchone()
-                print("MYIMAGE", image)
+                logger.info("MYIMAGE", image)
                 logger.info("Image fetched from database")
 
                 output = []
@@ -1104,18 +1102,18 @@ def get_book_image(id, imgId):
                 image_data["url"] = image[1]
 
                 # if(local_run==True):
-                #     print("IN LOCAL RUN")
+                #     logger.info("IN LOCAL RUN")
                 #     output.append(image_data)
                 #     cur.cose()
                 #     return jsonify(output),200
                 # else:
-                print("IN PRESIGNED URL")
-                print("my urls is", image_data["url"])
+                logger.info("IN PRESIGNED URL")
+                logger.info("my urls is", image_data["url"])
                 url_pre = str(image_data["url"])
                 modified_url = presignedUrl(url_pre)
-                print("url", modified_url)
+                logger.info("url", modified_url)
                 image_data["url"] = modified_url
-                print("image data url", image_data["url"])
+                logger.info("image data url", image_data["url"])
                 output.append(image_data)
                 logger.info("Image details displayed to user")
                 c.incr("get_book_image_success")
@@ -1133,7 +1131,7 @@ def get_book_image(id, imgId):
         return jsonify("Unauthorized"), 401
     except Exception as e:
 
-        print("in exception", e)
+        logger.info("in exception", e)
         logger.error("Exception in fetching image details: ", e)
         c.incr("get_book_image_invalid_login")
         return jsonify("Unauthorized"), 401
@@ -1166,7 +1164,7 @@ def update_image(id, imgId):
     cur = conn.cursor()
     cur.execute("SELECT username, password FROM Person where username=%s", username)
     user = cur.fetchone()
-    print("user :", user)
+    logger.info("user :", user)
 
     """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
     if not user:
@@ -1190,30 +1188,30 @@ def update_image(id, imgId):
             return jsonify("Bad request"), 400
 
         try:
-            print ("in upload_image")
+            logger.info ("in upload_image")
 
             if 'file' in request.files:
-                print("file present")
+                logger.info("file present")
 
                 file = request.files['file']
-                print (file.filename)
+                logger.info (file.filename)
 
                 if file.filename == '':
                     logger.info("No file selected")
-                    print('No selected file')
+                    logger.info('No selected file')
 
                 if file and allowed_file(file.filename):
                     logger.info("Checking file format")
                     filename = secure_filename(file.filename)
                     logger.info("File format valid")
 
-                    print("filename: ",filename)
+                    logger.info("filename: ",filename)
                     logger.info("Saving image in folder")
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     url_for_image = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     logger.info("File saved in local folder")
 
-                    print("url: ", url_for_image)
+                    logger.info("url: ", url_for_image)
 
                     """ OBTAIN BOOK ID TO COMPARE IN DATABASE """
                     bookId = id
@@ -1225,11 +1223,11 @@ def update_image(id, imgId):
                     """ OBTAIN BOOK BY ID """
                     cur.execute("SELECT * FROM Books WHERE id=%s", bookId)
                     book = cur.fetchone()
-                    print("book: ", book)
+                    logger.info("book: ", book)
                     logger.info("Book fetched from database")
 
                     if (book == None):
-                        print("no book")
+                        logger.info("no book")
                         logger.error("Book not available in database")
                         c.incr("update_image_bad_request")
                         return jsonify("No content"), 204
@@ -1285,7 +1283,7 @@ def delete_image(id, imgId):
         cur = conn.cursor()
         cur.execute("SELECT username, password FROM Person where username=%s", username)
         user = cur.fetchone()
-        print("user :", user)
+        logger.info("user :", user)
 
         """ OBTAIN USERNAME AND PASSWORD BY TOKEN FROM DATABASE """
         if not user:
@@ -1308,7 +1306,7 @@ def delete_image(id, imgId):
             cur.execute("SELECT * FROM Image WHERE id=%s", imgId)
             image = cur.fetchone()
             logger.info("Image fetched from database")
-            print("image :", image)
+            logger.info("image :", image)
             imageUrl = image[1]
 
             if (image == None):
@@ -1319,11 +1317,11 @@ def delete_image(id, imgId):
             # if (book == None):
             #     return jsonify("No content"), 204
 
-            print("image book id : ", image[2])
-            print("book book id : ", bookId)
+            logger.info("image book id : ", image[2])
+            logger.info("book book id : ", bookId)
 
             if image[2] == bookId:
-                print("in if")
+                logger.info("in if")
 
                 """ DELETE Image FROM DATABASE """
                 logger.info("Deleting book image from database")
@@ -1345,14 +1343,15 @@ def delete_image(id, imgId):
         c.incr("delete_image_invalid_login")
         return jsonify("Unauthorized"), 401
     except Exception as e:
-        print("exception : ", e)
+        logger.info("exception : ", e)
         logger.error("Exception in deleting book image: ", e)
         c.incr("delete_image_invalid_login")
         return jsonify("Unauthorized"), 401
 #Parameters for sending email
 SUBJECT = "Reset password"
 DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
-newDomain = DOMAIN_NAME.rstrip(".")
+# newDomain = DOMAIN_NAME.rstrip(".")
+newDomain = DOMAIN_NAME
 SENDER = newDomain
 
 
@@ -1362,14 +1361,14 @@ def generate_reset_Link(domain_name, email, token):
     DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
     newDomain = DOMAIN_NAME.rstrip(".")
     SENDER = newDomain
-    resetLink = "https://noreply@"+domain_name+"/reset@email="+email+"&token="+token
+    resetLink = "https://"+domain_name+"/reset@email="+email+"&token="+token
     return resetLink
 
 def send_Email(email, resetLink):
     logger.info("Sending email to SNS")
     try:  
         client = boto3.client('ses',region_name='us-east-1')
-        print("sending email client created")
+        logger.info("sending email client created")
         client.send_email(
             Source = SENDER,
             Destination = {
@@ -1394,19 +1393,19 @@ def send_Email(email, resetLink):
                     }
                 }
             })
-        print("Client is sending email")
+        logger.info("Client is sending email")
     
         c.incr('api.passwordReset.POST.200')
         return jsonify({"message": " : you will receive password reset link if the email address exists in our system"})
     except Exception as e:
-        print("Exception oin sending email: ", e)
+        logger.info("Exception oin sending email: ", e)
         c.incr('api.passwordReset.POST.400')
         return jsonify({"message": " : you will receive password reset link if the email address exists in our system"})
 
 def generate_uuid():
     ur_uuid = uuid.uuid4()
-    print("My weird string:", ur_uuid)
-    print("My weird strings type:", ur_uuid)
+    logger.info("My weird string:", ur_uuid)
+    logger.info("My weird strings type:", ur_uuid)
     return str(ur_uuid)
 
 def generate_time_for_dynamoDB():
@@ -1453,15 +1452,15 @@ def get_record_details(email):
 
     # Get the service resource.
     dynamodb = boto3.resource('dynamodb', region_name=aws_region)
-    print("Dynamo db client created")
+    logger.info("Dynamo db client created")
 
     table = dynamodb.Table('csye6225')
-    print("Dynamo db table is:", table)
+    logger.info("Dynamo db table is:", table)
 
     try:
         #get record exists in dynamodb
         response = get_record_from_dynamodb(table, email)
-        print("First get response: ", response)
+        logger.info("First get response: ", response)
 
         for (key, value) in response.items():
        # Check if key is even then add pair to new dictionary
@@ -1470,21 +1469,21 @@ def get_record_details(email):
                 ttlTimeInDynamoDB = item['ttlDynamo']
                 currentTime = get_current_time()
 
-                print("ttlTimeInDynamoDB : ", ttlTimeInDynamoDB)
-                print("currentTime : ", currentTime)
+                logger.info("ttlTimeInDynamoDB : ", ttlTimeInDynamoDB)
+                logger.info("currentTime : ", currentTime)
 
                 if currentTime > ttlTimeInDynamoDB:
                     resDict = {}
                     resDict['msg'] = "Send email"
                     resDict['details'] = item
                     # resJson = json.dumps(resDict, indent=4)
-                    print("resJson = ", resDict)
+                    logger.info("resJson = ", resDict)
                 else:
                     resDict = {}
                     resDict['msg'] = "Do not send email"
                     resDict['details'] = ""
                     # resJson = json.dumps(resDict)
-                    print("resJson = ", resDict)
+                    logger.info("resJson = ", resDict)
                 
                 return resDict
             else:
@@ -1495,26 +1494,26 @@ def get_record_details(email):
                 put_record_in_dynamodb(table, email, myUuid, expiryTime)
                 
                 newRes = get_record_from_dynamodb(table, email)
-                print("New response:", newRes)
+                logger.info("New response:", newRes)
 
                 for (key, value) in newRes.items():
                # Check if key is even then add pair to new dictionary
                     if key == "Item":
                         item = newRes['Item']
-                        print("GetItem succeeded:")
-                        print(item)
+                        logger.info("GetItem succeeded:")
+                        logger.info(item)
                         resDict = {}
                         resDict['msg'] = "Send email"
                         resDict['details'] = item
-                        # print("else dumps")
+                        # logger.info("else dumps")
                         # resJson = json.dumps(resDict)
-                        print("resJson = ", resDict)
+                        logger.info("resJson = ", resDict)
 
                         return resDict
         # return item
 
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.info(e.response['Error']['Message'])
 
 
 @app.route("/reset", methods=["POST"])
@@ -1523,7 +1522,7 @@ def reset_password():
     try:
 
         email=request.json.get("username")
-        print("username: ",email)
+        logger.info("username: ",email)
 
         #Get emailId and verify if it exists in db
         if (email == ""):
@@ -1532,7 +1531,7 @@ def reset_password():
         
         #verrsify if username is valid
         email_status = verifyUsername(str(email))
-        print("username verified")
+        logger.info("username verified")
 
         try:
             conn = db.connect()
@@ -1546,19 +1545,19 @@ def reset_password():
                     respDict = get_record_details(email)
                     # respJson = json.loads(respDict)
 
-                    # print("response msg : ",respJson)
-                    # print("response msg : ",respJson['msg'])
+                    # logger.info("response msg : ",respJson)
+                    # logger.info("response msg : ",respJson['msg'])
                     responseMsg = respDict['msg']
                     responseDetails = respDict['details']
 
                     if responseMsg == "Send email":
 
-                            print("My token is",responseDetails['token'])
+                            logger.info("My token is",responseDetails['token'])
                             token = responseDetails['token']
 
                             #generate password reset link
                             resetLink = generate_reset_Link(newDomain, email, token)
-                            print("Reset link is:", resetLink)
+                            logger.info("Reset link is:", resetLink)
 
                             #send email
                             send_Email(email, resetLink)
@@ -1586,7 +1585,7 @@ def shutdown_server():
     func()
 def verifyUsername(email):
     is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
-    print("Is valid email?", is_valid)
+    logger.info("Is valid email?", is_valid)
     return is_valid
 
 @app.route('/shutdown', methods=['GET'])
@@ -1596,8 +1595,4 @@ def shutdown():
 
 """ RUN FLASK APP """
 if __name__ == '__main__':
-    print("Database creation initiated")
-    
- #   create_database()
-    print("Database created")
     app.run(host='0.0.0.0')

@@ -24,6 +24,7 @@ import statsd
 from flask_statsdclient import StatsDClient
 import time
 from decimal import Decimal
+from botocore.exceptions import ClientError
 
 """ Config parser """
 config = configparser.ConfigParser()
@@ -178,28 +179,32 @@ def upload_on_s3( filename ):
     # print("filename inupload: ", os.path.join(s3_dir, filename))
 
     # key_filename = os.path.join(s3_dir, filename)
-    key_filename = filename
-    print("key_filename:",key_filename)
-    print("Filename:",filename)
+    try:
 
-    #filename = filename
+        key_filename = filename
+        print("key_filename:",key_filename)
+        print("Filename:",filename)
 
-    s3 = boto3.client(
-        "s3")
-    bucket_resource = s3
+        #filename = filename
 
-    print("bucket_resource", bucket_resource)
-    with open(filename, 'rb') as data:
-        s3.upload_fileobj(data, aws_s3_bucket_name, filename)
+        s3 = boto3.client(
+            "s3")
+        bucket_resource = s3
 
-    # bucket_resource.upload_file(
-    #     Bucket = aws_s3_bucket_name,
-    #     Filename=key_filename,
-    #     Key=filename
-    #     # ExtraArgs={'ContentType': "multipart/form-data"}
-    # )
-    print("UPLOAD SUCCESSFULL")
-    logger.info("Image uploaded in s3")
+        print("bucket_resource", bucket_resource)
+        with open(filename, 'rb') as data:
+            s3.upload_fileobj(data, aws_s3_bucket_name, filename)
+
+        # bucket_resource.upload_file(
+        #     Bucket = aws_s3_bucket_name,
+        #     Filename=key_filename,
+        #     Key=filename
+        #     # ExtraArgs={'ContentType': "multipart/form-data"}
+        # )
+        print("UPLOAD SUCCESSFULL")
+        logger.info("Image uploaded in s3")
+    except ClientError as e:
+        return e
 
 
 """ DELETE IMAGE FROM S3 BUCKET """

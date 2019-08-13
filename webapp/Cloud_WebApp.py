@@ -553,30 +553,30 @@ def request_a_book(id):
 
 
         if request.authorization and request.authorization.username == userData["username"] and (bcrypt.checkpw(request.authorization.password.encode('utf-8'),userData["password"].encode('utf-8'))):
-            cur.close()
+            # cur.close()
             logger.info("User authenticated")
             c.incr("index_valid_login")
             """ OBTAIN USERNAME AND PASSWORD FROM TOKEN AND DATABASE """
-            conn = db.connect()
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
-            user = cur.fetchone()
+            # conn = db.connect()
+            # cur = conn.cursor()
+            # cur.execute("SELECT * FROM Person where username=%s", dataDict["username"])
+            # user = cur.fetchone()
 
-            if not user:
-                logger.error("User not available in database")
-                c.incr("request_a_book_invalid_login")
-                return jsonify("Unauthorized"), 401
+            # if not user:
+            #     logger.error("User not available in database")
+            #     c.incr("request_a_book_invalid_login")
+            #     return jsonify("Unauthorized"), 401
 
-            userData = {}
-            userData["username"] = user[1]
-            userData["password"] = user[2]
+            # userData = {}
+            # userData["username"] = user[1]
+            # userData["password"] = user[2]
 
-            if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
+            # if bcrypt.checkpw(dataDict["password"].encode('utf-8'), userData["password"].encode('utf-8')):
 
-                """ OBTAIN BOOK BY ID """
-                conn = db.connect()
-                cur = conn.cursor()
-
+            #     """ OBTAIN BOOK BY ID """
+            #     conn = db.connect()
+            #     cur = conn.cursor()
+            try:
                 cur.execute("SELECT id, title, author, isbn, quantity FROM Books where id=%s", bookId)
                 book = cur.fetchone()
 
@@ -631,9 +631,10 @@ def request_a_book(id):
                     logger.info("Book available to user")
                     c.incr("request_a_book_success")
                     return json.dumps(resUm, indent=4), 200
-            logger.error("User not authenticated")
-            c.incr("request_a_book_fail")
-            return jsonify("Unauthorized"), 401
+            except Exception as e:
+                logger.error("User not authenticated")
+                c.incr("request_a_book_fail")
+                return jsonify("Unauthorized"), 401
     except Exception as e:
         print("in exception")
         logger.error("Exception in fetching book by id: ", e)
@@ -951,8 +952,8 @@ def delete_book(id):
             img_set =cur.fetchone()
             print("print img_set: ", img_set)
 
-            imageUrl = img_set[1]
-            print("url: ",imageUrl)
+            # imageUrl = img_set[1]
+            # print("url: ",imageUrl)
 
             if not img_set:
                 cur.execute("DELETE FROM Books WHERE id=%s", bookId)
@@ -1096,7 +1097,33 @@ def upload_image(id):
                     '''upload image on S_3 bucket'''
                     # if production_run==True:
                     logger.info("Uploading book image to s3")
-                    upload_on_s3(url_for_image)
+                    try:
+
+                        key_filename = filename
+                        print("key_filename:",key_filename)
+                        print("Filename:",filename)
+
+                        #filename = filename
+
+                        s3 = boto3.client(
+                            "s3")
+                        bucket_resource = s3
+
+                        print("bucket_resource", bucket_resource)
+                        with open(filename, 'rb') as data:
+                            s3.upload_fileobj(data, aws_s3_bucket_name, filename)
+
+                        # bucket_resource.upload_file(
+                        #     Bucket = aws_s3_bucket_name,
+                        #     Filename=key_filename,
+                        #     Key=filename
+                        #     # ExtraArgs={'ContentType': "multipart/form-data"}
+                        # )
+                        print("UPLOAD SUCCESSFULL")
+                        logger.info("Image uploaded in s3")
+                    except ClientError as e:
+                        return e
+                    # upload_on_s3(url_for_image)
                     logger.info("Uploading book image to s3 successful")
 
                     """ OBTAIN IMAGE FROM IMAGE TABLE USING BOOKID And update Book table with the imageid"""

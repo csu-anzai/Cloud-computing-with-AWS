@@ -968,14 +968,15 @@ def delete_book(id):
                 cur.execute("DELETE FROM Image WHERE id=%s", img_set[0])
                 conn.commit()
                 logger.info("Book's image also deleted")
+                ''' DELETING IMAGE FROM S3 IF EXISIS '''
+                logger.info("Deleting book from s3")
+                delete_image_from_s3(imageUrl)
+                logger.info("Book deleted from s3")
             
             cur.close()
 
             # if not local_run:
-            ''' DELETING IMAGE FROM S3 IF EXISIS '''
-            # logger.info("Deleting book from s3")
-            # delete_image_from_s3(imageUrl)
-            # logger.info("Book deleted from s3")
+            
 
             return jsonify(''),204
         logger.error("User not authorized")

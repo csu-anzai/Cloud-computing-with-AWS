@@ -1584,10 +1584,13 @@ def shutdown_server():
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
+<<<<<<< HEAD
 def verifyUsername(email):
     is_valid = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
     logger.info("Is valid email?", is_valid)
     return is_valid
+=======
+>>>>>>> parent of f7f960c... verify username
 
 @app.route('/shutdown', methods=['GET'])
 def shutdown():

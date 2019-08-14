@@ -1358,7 +1358,9 @@ def generate_reset_Link(email, token):
     #Parameters for sending email
     SUBJECT = "Reset password"
     DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
-    newDomain = DOMAIN_NAME.rstrip(".")
+    # newDomain = DOMAIN_NAME.rstrip(".")
+    newDomain = DOMAIN_NAME
+    logger.info("Domain name is: %s", newDomain)
     SENDER = newDomain
     resetLink = "https://"+newDomain+"/reset@email="+email+"&token="+token
     logger.info("Reset link generated")
@@ -1394,6 +1396,7 @@ def send_Email(email, resetLink):
                 }
             })
         print("Client is sending email")
+        logger.info("Client is sending email")
     
         c.incr('api.passwordReset.POST.200')
         return jsonify({"message": " : you will receive password reset link if the email address exists in our system"})
@@ -1596,8 +1599,4 @@ def shutdown():
 
 """ RUN FLASK APP """
 if __name__ == '__main__':
-    print("Database creation initiated")
-    
- #   create_database()
-    print("Database created")
     app.run(host='0.0.0.0')

@@ -1354,13 +1354,13 @@ newDomain = DOMAIN_NAME.rstrip(".")
 SENDER = newDomain
 
 
-def generate_reset_Link(domain_name, email, token):
+def generate_reset_Link(email, token):
     #Parameters for sending email
     SUBJECT = "Reset password"
     DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
     newDomain = DOMAIN_NAME.rstrip(".")
     SENDER = newDomain
-    resetLink = "https://"+domain_name+"/reset@email="+email+"&token="+token
+    resetLink = "https://"+newDomain+"/reset@email="+email+"&token="+token
     logger.info("Reset link generated")
     return resetLink
 
@@ -1557,7 +1557,7 @@ def reset_password():
                             token = responseDetails['token']
 
                             #generate password reset link
-                            resetLink = generate_reset_Link(newDomain, email, token)
+                            resetLink = generate_reset_Link(email, token)
                             print("Reset link is:", resetLink)
 
                             #send email

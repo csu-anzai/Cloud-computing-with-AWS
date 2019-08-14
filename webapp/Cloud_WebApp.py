@@ -230,11 +230,13 @@ def register_user():
             logger.info("application type is not json")
             return jsonify('failed', 'Content-type must be application/json', 401)
         try:
-            if not request.json:
+            if not request.is_json:
                 logger.info("Bad json input")
                 return jsonify("Bad request"), 400
             try:
-                email = request.json.get('username')
+                userInfo = request.get_json()
+                email = userInfo['username']
+#                 request.json.get('username')
                 print("email : ",email)
                 if not email:
                     logger.error("Email not found")
@@ -247,7 +249,8 @@ def register_user():
                     return jsonify("Bad email request"), 400
 
                 """ VERIFY PASSWORD """
-                myPassword = request.json.get('password')
+                myPassword = userInfo['password']
+#                 request.json.get('password')
                 if not myPassword:
                     logger.error("Password not found")
                     return jsonify("Bad password"), 400

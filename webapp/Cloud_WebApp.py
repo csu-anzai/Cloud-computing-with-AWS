@@ -228,6 +228,8 @@ def register_user():
     try:
         if not request.content_type == 'application/json':
             return jsonify('failed', 'Content-type must be application/json', 401)
+        if not request.json:
+            return jsonify("Bad request"), 400
         try:
             email = request.json.get('username')
             print("email : ",email)

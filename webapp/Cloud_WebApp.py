@@ -1361,7 +1361,7 @@ def generate_reset_Link(newDomain,email, token):
     logger.info("Reset link generated: %s", resetLink)
     return resetLink
 
-def send_Email(newDomain, email, resetLink):
+def send_Email(SENDER, email, resetLink):
     logger.info("Sending email to SNS")
     try:  
         client = boto3.client('ses',region_name='us-east-1')
@@ -1557,7 +1557,7 @@ def reset_password():
                             print("Reset link is:", resetLink)
 
                             #send email
-                            send_Email(newDomain, email, resetLink)
+                            send_Email(SENDER, email, resetLink)
 
                             return jsonify("Email sent successfully"), 200
                     else:

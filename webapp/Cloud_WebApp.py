@@ -1366,6 +1366,10 @@ def send_Email(SENDER, email, resetLink, SUBJECT):
     try:  
         client = boto3.client('ses',region_name='us-east-1')
         logger.info("sending email client created")
+        logger.info("SENDER: %s", SENDER)
+        logger.info("email: %s", email)
+        logger.info("resetLink: %s", resetLink)
+        logger.info("SUBJECT: %s", SUBJECT)
         client.send_email(
             Source = SENDER,
             Destination = {
@@ -1557,7 +1561,7 @@ def reset_password():
                             print("Reset link is:", resetLink)
 
                             #send email
-                            send_Email(SENDER, email, resetLink, SUBJECT)
+                            send_Email(newDomain, email, resetLink, SUBJECT)
 
                             return jsonify("Email sent successfully"), 200
                     else:

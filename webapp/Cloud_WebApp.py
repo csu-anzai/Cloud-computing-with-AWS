@@ -1374,9 +1374,7 @@ def send_Email(email, resetLink):
         client.send_email(
             Source = SENDER,
             Destination = {
-                'ToAddresses': [
-                    email
-                ]
+                'ToAddresses': email
             },
             Message = {
                 'Subject': {

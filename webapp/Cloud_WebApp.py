@@ -1352,7 +1352,7 @@ SUBJECT = "Reset password"
 DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
 # newDomain = DOMAIN_NAME.rstrip(".")
 newDomain = DOMAIN_NAME
-SENDER = newDomain
+SENDER = "noreply@"+newDomain
 
 
 def generate_reset_Link(newDomain,email, token):

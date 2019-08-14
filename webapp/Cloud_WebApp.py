@@ -1561,7 +1561,7 @@ def reset_password():
                             print("Reset link is:", resetLink)
 
                             #send email
-                            send_Email(newDomain, email, resetLink, SUBJECT)
+                            send_Email(SENDER, email, resetLink, SUBJECT)
 
                             return jsonify("Email sent successfully"), 200
                     else:

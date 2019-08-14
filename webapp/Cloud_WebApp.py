@@ -1350,23 +1350,18 @@ def delete_image(id, imgId):
 #Parameters for sending email
 SUBJECT = "Reset password"
 DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
-newDomain = DOMAIN_NAME.rstrip(".")
+# newDomain = DOMAIN_NAME.rstrip(".")
+newDomain = DOMAIN_NAME
 SENDER = newDomain
 
 
-def generate_reset_Link(email, token):
-    #Parameters for sending email
-    SUBJECT = "Reset password"
-    DOMAIN_NAME = config["Config"]['DOMAIN_NAME']
-    # newDomain = DOMAIN_NAME.rstrip(".")
-    newDomain = DOMAIN_NAME
+def generate_reset_Link(newDomain,email, token):
     logger.info("Domain name is: %s", newDomain)
-    SENDER = newDomain
     resetLink = "https://"+newDomain+"/reset@email="+email+"&token="+token
-    logger.info("Reset link generated")
+    logger.info("Reset link generated: %s", resetLink)
     return resetLink
 
-def send_Email(email, resetLink):
+def send_Email(newDomain, email, resetLink):
     logger.info("Sending email to SNS")
     try:  
         client = boto3.client('ses',region_name='us-east-1')
@@ -1558,11 +1553,11 @@ def reset_password():
                             token = responseDetails['token']
 
                             #generate password reset link
-                            resetLink = generate_reset_Link(email, token)
+                            resetLink = generate_reset_Link(newDomain, email, token)
                             print("Reset link is:", resetLink)
 
                             #send email
-                            send_Email(email, resetLink)
+                            send_Email(newDomain, email, resetLink)
 
                             return jsonify("Email sent successfully"), 200
                     else:

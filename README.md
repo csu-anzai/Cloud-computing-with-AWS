@@ -183,14 +183,14 @@ To handle multiple http requests to web server, load balancer comes into effect
   - To continously monitor web applcaition, use cloudwatch [logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html).
   - Setting up logging [config](https://flask.palletsprojects.com/en/1.0.x/logging/) to lowest level of *INFO*, all important and trivial logs can be captured.
 
-![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/Cloudwatch%20logs.jpg)
+![alt text](Images/cwLogs.jpg)
 
 
 #### 2. Cloudwatch metrics
   - Metrics help to understand the value of each API end point. To obtain the frequency, metrics can be used.
   - In combination with [statsd](https://github.com/statsd/statsd), flask-API end points can be monitored with AWS cloud watch.
 
-![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/Cloudwatch%20metrics.jpg)
+![alt text](Images/cwMetrics.jpg)
 
 ## jmeter load testing
 To test the auto-scaling of EC2 instances through load balancer, 1000 api requests are made continuously to increase load on web-server by calling following end-points -
@@ -200,14 +200,14 @@ To test the auto-scaling of EC2 instances through load balancer, 1000 api reques
   - get book details
   - upload image to book
 #### Result:
-![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/jmeter%20result.jpg)
+![alt text](Images/jmeterResult.jpg)
 
 
 ## Running Tests</br>
   -   ``` pytest <filename>.py```
   - Open Restlet and test the following [web end points](https://app.swaggerhub.com/apis-docs/csye6225/csye6225-summer2019/3.0.0#/public/post_reset) -
 
-No. | Http request type | Url | Variables | Authorization | Response
+| No. | Http request type | Url | Variables | Authorization | Response |
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | / | - | No auth | "Unauthorized" |
 | 2 | POST | /user/register | username: "", Password: "" | No auth | "User registered", "User already exists" |

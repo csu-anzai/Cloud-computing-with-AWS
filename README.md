@@ -183,7 +183,7 @@ To handle multiple http requests to web server, load balancer comes into effect
   - To continously monitor web applcaition, use cloudwatch [logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html).
   - Setting up logging [config](https://flask.palletsprojects.com/en/1.0.x/logging/) to lowest level of *INFO*, all important and trivial logs can be captured.
 
-![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/Cloudwatch%20logs.jpg
+![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/Cloudwatch%20logs.jpg)
 
 
 #### 2. Cloudwatch metrics

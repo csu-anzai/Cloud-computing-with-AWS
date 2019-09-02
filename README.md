@@ -71,10 +71,10 @@ timeofcreation    | varchar(100)  |   Yes |     |  NULL
 #### Build instructions
 Requirements: 
 - API testing tool - install Reslet plugin, which is a chrome's extension
-- User need to have two S3 buckets:
-  - e.g. for webapp: yourdomain.tld 
-         for code deploy: code-deploy.yourdomain.tld  
-  where yourdomain.tld should be replaced with your domain name
+- User need to have two S3 buckets, eg:
+  - for webapp: yourdomain.tld
+  - for code deploy: code-deploy.yourdomain.tld
+  - where yourdomain.tld should be replaced with your domain name
   
     ```bash
     git clone git@github.com:Adhira-Deogade/cloud-computing-aws.git

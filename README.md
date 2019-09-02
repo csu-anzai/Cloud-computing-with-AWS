@@ -177,7 +177,7 @@ To handle multiple http requests to web server, load balancer comes into effect
 - email service (SES)
 - notification service (SNS)
 
- ## CloudWatch
+## CloudWatch
   - Cloudwatch [agent](webapp/amazon-cloudwatch-agent.json) (a json file) needs to be placed in the system on which the web server is running.
   - It is setup in EC2 instances by installing them in the amazon machine image ([AMI](firstinstance.sh)) - CentosOS7
     ```bash

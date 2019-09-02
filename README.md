@@ -13,7 +13,8 @@ Summary: In this project, a library management system web application is deploye
   - Images for books are stored in [S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html).
   - [Code deploy](https://aws.amazon.com/codedeploy/) bundle is stored in different S3 bucket.
 
-## Technology stack</br>
+## Technology stack
+
 1. Developed using Flask - a micro web framework written in Python.
 2. Plugged with uWSGI application server to launch the application.
 3. Nginx to act as a front end reverse proxy.
@@ -33,12 +34,11 @@ password    | varchar(100)  |   Yes |     |  NULL
  
 #### Books
 
-| Field | Type | Null | Key | Default |
+Field | Type | Null | Key | Default
 | --- | --- | --- | --- | --- |
-|id            | varchar(100)       |   No  |PRI  |  NULL    |
-|title    | varchar(100)  |   Yes |     |  NULL    |
-|timeofcreation    | varchar(100)  |   Yes |     |  NULL    |
-</br>
+id            | varchar(100)       |   No  |PRI  |  NULL
+title    | varchar(100)  |   Yes |     |  NULL
+timeofcreation    | varchar(100)  |   Yes |     |  NULL
 
 ***An additional field of "time of creation" is added in books table to maintain time-to-live of DynamoDB*** </br>
 #### Image
@@ -78,10 +78,11 @@ Requirements:
     git clone git@github.com:Adhira-Deogade/cloud-computing-aws.git
     cd cloud-computing-aws/webapp
     ```
-- Run a build through API without having to make any commit to master:</br>
-  ```bash
-  curl -u e7dc1223f96c97299b257a6cb26bffd9cf897bdc -d build_parameters[CIRCLE_JOB]=build https://circleci.com/api/v1.1/project/github/Adhira-Deogade/cloud-computing-aws/tree/master
-  ```
+- Run a build through API without having to make any commit to master:
+
+    ```bash
+    curl -u e7dc1223f96c97299b257a6cb26bffd9cf897bdc -d build_parameters[CIRCLE_JOB]=build   https://circleci.com/api/v1.1/project/github/Adhira-Deogade/cloud-computing-aws/tree/master
+    ```
 - refer [config.yml](.circleci/config.yml) file in .circleci folder
 
 #### Deploy instructions
@@ -104,7 +105,8 @@ Three groups:
   - 1 user with programmatic access - create and delete resources
   - All users assigned to respective groups
   
-#### 3. Roles and policies </br>
+#### 3. Roles and policies
+
 5 roles:
   1. Auto scaling service role has an attached policy of managing EC2 instances, cloud-watch agent, load balancer, instance profile, and simple notification service
   2. Elastic load balancer service role has an attached policy of managing network interface with instance, and logging.
@@ -121,7 +123,7 @@ Apart from AWS managed policies, I created following policies to manage aws reso
 - I deployed the application on 3 EC2 instances and scaled max to 5 instances.
 - Auto scaling group with attached security groups make it simple to manage the instances and code deployment.
 
-## Serverless computing - restting password
+## Serverless computing - resetting password
 #### Lambda function
 ![alt text](Images/Lambda_HowItWorks.662f209027a4fdfde72164fde6f01f51127e8c21.png)
 - This runs code in response to events and automatically manages the computing resources required by that code.
@@ -203,7 +205,8 @@ To test the auto-scaling of EC2 instances through load balancer, 1000 api reques
 ![alt text](Images/jmeterResult.jpg)
 
 
-## Running Tests</br>
+## Running Tests
+
   -   ``` pytest <filename>.py```
   - Open Restlet and test the following [web end points](https://app.swaggerhub.com/apis-docs/csye6225/csye6225-summer2019/3.0.0#/public/post_reset) -
 

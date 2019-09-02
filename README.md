@@ -40,7 +40,8 @@ id            | varchar(100)       |   No  |PRI  |  NULL
 title    | varchar(100)  |   Yes |     |  NULL
 timeofcreation    | varchar(100)  |   Yes |     |  NULL
 
-***An additional field of "time of creation" is added in books table to maintain time-to-live of DynamoDB*** </br>
+***An additional field of "time of creation" is added in books table to maintain time-to-live of DynamoDB***
+
 #### Image
 
 | Field | Type | Null | Key | Default |
@@ -70,10 +71,11 @@ timeofcreation    | varchar(100)  |   Yes |     |  NULL
 #### Build instructions
 Requirements: 
 - API testing tool - install Reslet plugin, which is a chrome's extension
-- User need to have two S3 buckets:</br>
-  e.g. for webapp: yourdomain.tld 
-       for code deploy: code-deploy.yourdomain.tld  
-  where yourdomain.tld should be replaced with your domain name</br>
+- User need to have two S3 buckets:
+  - e.g. for webapp: yourdomain.tld 
+         for code deploy: code-deploy.yourdomain.tld  
+  where yourdomain.tld should be replaced with your domain name
+  
     ```bash
     git clone git@github.com:Adhira-Deogade/cloud-computing-aws.git
     cd cloud-computing-aws/webapp

@@ -183,14 +183,14 @@ To handle multiple http requests to web server, load balancer comes into effect
   - To continously monitor web applcaition, use cloudwatch [logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html).
   - Setting up logging [config](https://flask.palletsprojects.com/en/1.0.x/logging/) to lowest level of *INFO*, all important and trivial logs can be captured.
 
-![alt text](Images/Cloudwatch logs.jpg)
+![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/Cloudwatch%20logs.jpg
 
 
 #### 2. Cloudwatch metrics
   - Metrics help to understand the value of each API end point. To obtain the frequency, metrics can be used.
   - In combination with [statsd](https://github.com/statsd/statsd), flask-API end points can be monitored with AWS cloud watch.
 
-![alt text](Images/Cloudwatch metrics.jpg)
+![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/Cloudwatch%20metrics.jpg)
 
 ## jmeter load testing
 To test the auto-scaling of EC2 instances through load balancer, 1000 api requests are made continuously to increase load on web-server by calling following end-points -
@@ -200,7 +200,7 @@ To test the auto-scaling of EC2 instances through load balancer, 1000 api reques
   - get book details
   - upload image to book
 #### Result:
-![alt text](https://github.com/Adhira-Deogade/cloud-computing-aws/blob/master/Images/jmeter%20result.jpg)
+![alt text](https://github.com/Adhira-Deogade/aws-cloud-computing/blob/master/Images/jmeter%20result.jpg)
 
 
 ## Running Tests</br>

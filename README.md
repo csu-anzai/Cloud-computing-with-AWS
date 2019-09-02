@@ -101,11 +101,9 @@ Three groups:
   3. Team with *read only access*
 
 #### 2. Users
-  - 3 users as teaching staff
-  - 3 users as team members
-  - all having accesss to sign in into console with key and password (only read the resources)
-  - 1 user with programmatic access - create and delete resources
-  - All users assigned to respective groups
+  - users in staff and team given accesss to sign-in into console with key and password (only read the resources)
+  - admin user with programmatic access - create and delete resources
+  - all users assigned to respective groups
   
 #### 3. Roles and policies
 
@@ -126,15 +124,18 @@ Apart from AWS managed policies, I created following policies to manage aws reso
 - Auto scaling group with attached security groups make it simple to manage the instances and code deployment.
 
 ## Serverless computing - resetting password
+
+![alt text](Images/sns-how-works.png)
+
 #### Lambda function
-![alt text](Images/Lambda_HowItWorks.662f209027a4fdfde72164fde6f01f51127e8c21.png)
 - This runs code in response to events and automatically manages the computing resources required by that code.
 - This function is invoked when user requests to reset password through API.
 - It subscribes to SNS topic
 - Called "handler function"
 
+![alt text](Images/Lambda_HowItWorks.662f209027a4fdfde72164fde6f01f51127e8c21.png)
+
 #### Simple Notification service ([SNS](https://aws.amazon.com/blogs/aws/introducing-the-amazon-simple-notification-service/))
-![alt text](Images/sns-how-works.png)
 - This event is triggered when API is hit
 - Since lambda function is subscribed to this topic, it is executed when this event is triggered
 
@@ -155,7 +156,7 @@ Apart from AWS managed policies, I created following policies to manage aws reso
 ![alt text](https://d2908q01vomqb2.cloudfront.net/22d200f8670dbdb3e253a90eee5098477c95c23d/2016/10/11/image1_numbereddiagram_b.png)
 
 #### HTTPS
-- Create an SSL certificate from [here](https://aws.amazon.com/certificate-manager/)
+- Create an **SSL certificate** from [here](https://aws.amazon.com/certificate-manager/)
 - Validate with DNS by creating a CNAME record in [Route 53](https://aws.amazon.com/route53/)
 - To manage HTTPS traffic from load balancer to auto scaling group instances, SSL certificate is essential
 
@@ -166,7 +167,7 @@ Apart from AWS managed policies, I created following policies to manage aws reso
 
 #### Elastic load balancer
 To handle multiple http requests to web server, load balancer comes into effect
-![alt text](Images/http.jpg)
+![alt text](Images/elb.png)
 
 ## Python - SDK
 
@@ -188,7 +189,6 @@ To handle multiple http requests to web server, load balancer comes into effect
   - Setting up logging [config](https://flask.palletsprojects.com/en/1.0.x/logging/) to lowest level of *INFO*, all important and trivial logs can be captured.
 
 ![alt text](Images/cwLogs.jpg)
-
 
 #### 2. Cloudwatch metrics
   - Metrics help to understand the value of each API end point. To obtain the frequency, metrics can be used.

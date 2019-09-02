@@ -27,7 +27,8 @@ read -p "enter the ami id" ami
 
 read -p "enter the keypair" key
 read -p "enter the stack name" stack
+read -p "Enter bucket name: " bucket
 echo "$VPC"
 echo "This script is about to run another script."
-./csye6225-aws-cf-create-application-stack.sh "$ami" "$VPC" "$key" "$stack" "$Subnet1" "$Subnet2"
+bash csye6225-aws-cf-create-application-stack.sh "$ami" "$VPC" "$key" "$stack" "$Subnet1" "$Subnet2" "$bucket"
 echo "This script has just run another script."

@@ -2,6 +2,10 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
 
+  BUCKNAME:
+    Type: String
+    Description: Bucket to send Images to
+
   AMI:
 
     Type: 'AWS::EC2::Image::Id'
@@ -150,42 +154,37 @@ Resources:
       - 
         Key: "Name"
         Value: "EC2codedeploy"
-      UserData: 
-        Fn::Base64: !Sub |
-            #!/bin/bash -xe
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - "\n"
+            - [ "#!/bin/bash -xe",
 
-            echo "export RDS_INSTANCE=${RDSInstance.Endpoint.Address}" >> /etc/environment
-            
-            echo "export MYSQL_DATABASE_USER=csye6225master" >> /etc/environment
-            echo "export MYSQL_DATABASE_PASSWORD=csye6225password" >> /etc/environment
-            echo "export AWS_REGION_NAME=us-east-1" >> /etc/environment
-            echo "export PRODUCTION_RUN=True" >> /etc/environment
-            echo "export LOCAL_RUN=False" >> /etc/environment
+                "sudo bash",
 
-          #echo "export S3_BUCKET_NAME=${s3.BucketName}" >> /etc/environment
+                "cd /home/centos",
 
+                "cat > my.cnf << EOF",
 
+                "[Config]",
 
+                !Join ["",["RDS_INSTANCE=",!GetAtt RDSInstance.Endpoint.Address]],
 
-            
+                "MYSQL_DATABASE_USER=csye6225master",
 
+                "MYSQL_DATABASE_PASSWORD=csye6225password",
 
+                "AWS_REGION_NAME=us-east-1",
 
-          #echo "export DB_CONNECTION=${RDSInstance.Endpoint.Address}" >> $HOME/.bashrc
+                "PRODUCTION_RUN=True",
 
+                "LOCAL_RUN=False",
 
-           # export S3_BUCKET_NAME=csye6225-su19-thawalia.me.csye6225.com
-           # export AWS_REGION=us-east-1
+                !Join ["",["S3_BUCKET_NAME=",!Ref BUCKNAME]],
 
-        
-        
-
-
-      
-
-
-     
-
+                "EOF",
+              ]
+           
 
   DyanamoDBTable:
     Type: AWS::DynamoDB::Table
@@ -210,7 +209,7 @@ Resources:
     Properties:
       AllocatedStorage: 100
 
-      DBInstanceClass: db.m5.large
+      DBInstanceClass: db.t2.medium
       DBName: "csye6225"
       Engine: MySQL 
       MasterUserPassword: "csye6225password"
@@ -259,22 +258,10 @@ Resources:
               AWS:
                 - #arn:aws:iam::!Ref 'AWS::AccountId':user/circleci
                   !Join [':', ['arn:aws:iam:',!Ref 'AWS::AccountId','user/circleci']]
-                 
 
-               
-                  
-            
             Action: 
               
               - sts:AssumeRole
-              
-
-            
-                    
-                
-            
-
-
 
       Policies: 
         -
@@ -301,6 +288,22 @@ Resources:
                 Resource: 
                   - !Join ['', ['arn:aws:s3:::',code-deploy.csye6225-su19-*.*]]
                   - arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+        -
+
+          PolicyName: AttachmentEC2S3
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement: 
+              -
+                
+                Action:
+                  - s3:Put*
+                  - s3:Delete*
+                
+                Effect: Allow
+                Resource: 
+                  - !Join ['', ['arn:aws:s3:::',csye6225-su19-*.*.*.*]]
+                  
             
   CodeDeployServiceRole:
 
@@ -393,7 +396,11 @@ Resources:
                 
                 Effect: Allow
                 Resource: "*"
-                
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole'
+        - 'arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy'
+        - 'arn:aws:iam::aws:policy/CloudWatchAgentAdminPolicy'
+                          
               
                 
 
